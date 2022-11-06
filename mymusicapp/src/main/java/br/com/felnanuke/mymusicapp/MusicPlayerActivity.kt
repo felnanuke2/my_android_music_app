@@ -1,10 +1,10 @@
 package br.com.felnanuke.mymusicapp
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,12 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
 import br.com.felnanuke.mymusicapp.ui.theme.MyMusicAppTheme
 import br.com.felnanuke.mymusicapp.view_models.MusicPlayerViewModel
@@ -33,18 +33,16 @@ import com.linc.audiowaveform.model.AmplitudeType
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import linc.com.amplituda.Amplituda
 
 @AndroidEntryPoint
 class MusicPlayerActivity : ComponentActivity() {
-    lateinit var musicPlayerViewModel: MusicPlayerViewModel
+    private lateinit var musicPlayerViewModel: MusicPlayerViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
-        musicPlayerViewModel = MusicPlayerViewModel(Amplituda(this))
-        setupServices()
-        registerObservers()
         setContent {
+            musicPlayerViewModel = hiltViewModel()
             MyMusicAppTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
@@ -55,23 +53,6 @@ class MusicPlayerActivity : ComponentActivity() {
             }
         }
     }
-
-    private fun registerObservers() {
-        PlayerService.currentTrack.observe(this) { track ->
-            track?.let { thisTrack ->
-                musicPlayerViewModel.currentTrack = thisTrack
-                musicPlayerViewModel.onChangeTrack()
-            }
-
-        }
-    }
-
-    private fun setupServices() {
-        val intent = Intent(this, PlayerService::class.java)
-        bindService(intent, musicPlayerViewModel.serviceConnection, BIND_AUTO_CREATE)
-    }
-
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,7 +73,10 @@ fun Body(viewModel: MusicPlayerViewModel) {
             ) {
                 viewModel.currentTrack?.let { track ->
                     CdAnimation(
-                        track, { viewModel.getIsPlaying() }, 0.dp, constrained.maxWidth
+                        trackEntity = track,
+                        playing = viewModel.playing,
+                        padding = 0.dp,
+                        size = constrained.maxWidth
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                     Text(
@@ -103,12 +87,14 @@ fun Body(viewModel: MusicPlayerViewModel) {
                         text = track.artistName, style = MaterialTheme.typography.headlineSmall
                     )
                     Spacer(modifier = Modifier.weight(1f))
-                    WaveForm(viewModel.amplitudes.value) { viewModel.getTrackProgress() }
-                    MediaControllers(getIsPlaying = { viewModel.getIsPlaying() },
-                        toggle = { viewModel.togglePlay() },
-                        getCanSkipNext = { viewModel.getCanSkipNext() },
-                        skipNext = { viewModel.skipNext() },
-                        skipPrevious = { viewModel.skipPrevious() })
+                    WaveForm(viewModel.amplitudes, viewModel.trackProgress)
+                    MediaControllers(
+                        isPlaying = viewModel.playing,
+                        toggle = viewModel::togglePlay,
+                        canSkipNext = viewModel.canPlayNext,
+                        skipNext = viewModel::playNext,
+                        skipPrevious = viewModel::playPrevious
+                    )
 
                 }
 
@@ -121,28 +107,20 @@ fun Body(viewModel: MusicPlayerViewModel) {
 
 ///receive a waveform as fft and draw a waveform
 @Composable
-fun WaveForm(amplitudes: List<Int>, getTrackProgress: () -> Float) {
-    var progress by remember { mutableStateOf(0f) }
-    LaunchedEffect(key1 = progress) {
-        while (isActive) {
-            progress = getTrackProgress()
-            delay(400)
-        }
-    }
+fun WaveForm(amplitudes: List<Int>, progress: Float) {
 
 
-        AudioWaveform(
-            amplitudes = amplitudes,
-            progress = progress,
-            height = 68.dp,
-            onProgressChange = { progress ->
-            },
-            waveformBrush = SolidColor(Color.Gray),
-            progressBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            amplitudeType = AmplitudeType.Max,
+    AudioWaveform(
+        amplitudes = amplitudes,
+        progress = progress,
+        height = 68.dp,
+        onProgressChange = { progress ->
+        },
+        waveformBrush = SolidColor(Color.Gray),
+        progressBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        amplitudeType = AmplitudeType.Max,
 
         )
-
 
 
 }
@@ -157,22 +135,12 @@ fun PlayerMusicAppBar() {
 
 @Composable
 fun MediaControllers(
-    getIsPlaying: () -> Boolean,
+    isPlaying: Boolean,
     toggle: () -> Unit,
     skipNext: () -> Unit = {},
     skipPrevious: () -> Unit = {},
-    getCanSkipNext: () -> Boolean = { false },
+    canSkipNext: Boolean = false,
 ) {
-    var isPlaying by remember { mutableStateOf(getIsPlaying()) }
-    var canSkipNext by remember { mutableStateOf(getCanSkipNext()) }
-
-    LaunchedEffect(key1 = isPlaying, key2 = canSkipNext) {
-        while (isActive) {
-            isPlaying = getIsPlaying()
-            canSkipNext = getCanSkipNext()
-            delay(100)
-        }
-    }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -210,36 +178,21 @@ fun MediaControllers(
 
 @Composable
 fun CdAnimation(
-    trackEntity: TrackEntity, getIsPlaying: () -> Boolean, padding: Dp = 8.dp, size: Dp = 200.dp
+    trackEntity: TrackEntity, playing: Boolean, padding: Dp = 8.dp, size: Dp = 200.dp
 ) {
     var rotation by remember {
         mutableStateOf(0f)
     }
 
-    var isPlaying by remember {
-        mutableStateOf(getIsPlaying())
-    }
+    val speed by animateFloatAsState(
+        targetValue = if (playing) 1f else 0f,
+        animationSpec = tween(1000, easing = FastOutSlowInEasing),
 
-    var speed = 0f
+        )
 
-    val delta = 0.04f
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(playing, speed, rotation) {
         while (isActive) {
-            isPlaying = getIsPlaying()
-            if (isPlaying) {
-                if (speed < 1.2f) {
-                    speed += delta
-                }
-
-            } else {
-                if (speed > 0f) {
-                    speed -= delta
-                    if (speed < 0f) {
-                        speed = 0f
-                    }
-                }
-            }
             rotation += speed
             if (rotation > 360f) {
                 rotation = 0f
@@ -312,7 +265,7 @@ fun TopBarPreview() {
 @Composable
 fun DefaultPreview4() {
     MyMusicAppTheme {
-        MediaControllers({ false }, {})
+        MediaControllers(false, {})
     }
 }
 
@@ -320,9 +273,11 @@ fun DefaultPreview4() {
 @Composable
 fun DefaultPreview3() {
     MyMusicAppTheme {
-        CdAnimation(trackEntity = TrackEntity(
-            "Todo Mundo Vai Sofrer", "Marilia Mendonça", Uri.parse(""), Uri.parse(""), 2000
-        ), { false })
+        CdAnimation(
+            trackEntity = TrackEntity(
+                "Todo Mundo Vai Sofrer", "Marilia Mendonça", Uri.parse(""), Uri.parse(""), 2000
+            ), playing = true
+        )
     }
 }
 
@@ -330,10 +285,7 @@ fun DefaultPreview3() {
 @Composable
 fun DefaultPreview5() {
     MyMusicAppTheme {
-        WaveForm(amplitudes = mockAmplitudes.toMutableList()) { ->
-            0.6f
-
-        }
+        WaveForm(mockAmplitudes.toMutableList(), 0.5f)
     }
 }
 

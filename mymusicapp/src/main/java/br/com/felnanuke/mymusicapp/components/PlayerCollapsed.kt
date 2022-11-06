@@ -22,20 +22,15 @@ import androidx.compose.ui.unit.sp
 import br.com.felnanuke.mymusicapp.CdAnimation
 import br.com.felnanuke.mymusicapp.R
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 
 @Composable
 fun PlayerCollapsed(
     trackEntity: TrackEntity,
-    getProgress: () -> Float,
-    getIsPlaying: () -> Boolean,
+    progress: Float,
+    playing: Boolean,
     togglePlay: () -> Unit,
     openExpandedPlayerActivity: () -> Unit
 ) {
-    var progress by remember { mutableStateOf(0f) }
-    var playing by remember { mutableStateOf(true) }
-
     Card(backgroundColor = MaterialTheme.colorScheme.primary,
         shape = RoundedCornerShape(0.dp),
         modifier = Modifier
@@ -50,10 +45,7 @@ fun PlayerCollapsed(
         ) {
             Row {
                 CdAnimation(
-                    trackEntity = trackEntity,
-                    getIsPlaying = getIsPlaying,
-                    size = 50.dp,
-                    padding = 0.dp
+                    trackEntity = trackEntity, playing = playing, size = 50.dp, padding = 0.dp,
                 )
                 Column(
                     modifier = Modifier
@@ -90,13 +82,7 @@ fun PlayerCollapsed(
 
             }
             Box(modifier = Modifier.padding(vertical = 4.dp, horizontal = 0.dp)) {
-                LaunchedEffect(Unit) {
-                    while (isActive) {
-                        progress = getProgress()
-                        playing = getIsPlaying()
-                        delay(80)
-                    }
-                }
+
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth(),
                     progress = progress,
@@ -117,10 +103,6 @@ fun PlayerCollapsed(
 fun PlayerCollapsedPreview() {
     PlayerCollapsed(TrackEntity(
         "Track 2", "Artist 2", Uri.parse(""), Uri.parse(""), 23
-    ),
-        getIsPlaying = { false },
-        getProgress = { 0.5f },
-        togglePlay = {},
-        openExpandedPlayerActivity = {})
+    ), playing = true, progress = 0.5f, togglePlay = {}, openExpandedPlayerActivity = {})
 
 }

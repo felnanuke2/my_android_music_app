@@ -28,7 +28,7 @@
         </activity>
 
         <service
-            android:name=".PlayerService"
+            android:name=".core.infrastructure.android.services.PlayerService"
             android:enabled="true"
             android:exported="true" />
 

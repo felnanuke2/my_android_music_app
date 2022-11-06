@@ -1,46 +1,48 @@
-package br.com.felnanuke.mymusicapp
+package br.com.felnanuke.mymusicapp.core.infrastructure.android.services
 
 import android.app.Application
 import android.app.Service
 import android.content.Intent
-import android.content.ServiceConnection
 import android.media.MediaPlayer
-import android.media.audiofx.Equalizer
-import android.media.audiofx.Visualizer
 import android.os.Binder
 import android.os.IBinder
-import android.util.Log
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.MutableLiveData
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
-import kotlinx.coroutines.delay
+import java.util.Timer
+import kotlin.concurrent.schedule
 
 class PlayerService : Service() {
-
-    companion object CurrentTrack {
-        var currentTrack = MutableLiveData<TrackEntity?>(null)
-    }
 
 
     var queueManager: QueueManager? = null
     private val binder = PlayerServiceBinder()
 
     override fun onBind(intent: Intent): IBinder {
-        queueManager = QueueManager(this.application)
         return binder
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    fun startQueueManager() {
+        if (queueManager == null) {
+            queueManager = QueueManager(this.application)
+        }
+
     }
 
     /// get the wave form from the track
 
 
     class QueueManager(private val application: Application) {
+
+        val currentTrack = MutableLiveData<TrackEntity?>(null)
+        val isPlaying = MutableLiveData<Boolean>(false)
+        val progress = MutableLiveData<Float>(0f)
+        val canPlayNext = MutableLiveData<Boolean>(false)
+        val canPlayPrevious = MutableLiveData<Boolean>(false)
 
 
         private var mediaPlayer: MediaPlayer? = null
@@ -49,8 +51,30 @@ class PlayerService : Service() {
 
         private var oldProgress = 0f
 
+        init {
+            startProgressTimer()
+        }
 
-        fun getTrackProgress(): Float {
+
+        private fun startProgressTimer() {
+
+            Timer().schedule(0, 100) {
+                try {
+                    isPlaying.postValue(mediaPlayer?.isPlaying ?: false)
+                    if (isPlaying.value!!) {
+                        progress.postValue(
+                            getTrackProgress()
+                        )
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+            }
+        }
+
+
+        private fun getTrackProgress(): Float {
             if (mediaPlayer?.currentPosition != null && mediaPlayer?.duration != null) {
                 oldProgress =
                     mediaPlayer?.currentPosition?.toFloat()!! / mediaPlayer?.duration?.toFloat()!!
@@ -70,7 +94,7 @@ class PlayerService : Service() {
             return queue.indexOf(currentTrack.value)
         }
 
-        fun addTrack(track: TrackEntity, play: Boolean = false) {
+        fun addTrackToQueue(track: TrackEntity, play: Boolean = false) {
             queue.add(track)
             if (play) {
                 playTrack(track)
@@ -81,8 +105,9 @@ class PlayerService : Service() {
             }
         }
 
-        fun removeTrack(track: TrackEntity) {
-            queue.remove(track)
+
+        fun removeTrack(index: Int) {
+            queue.removeAt(index)
         }
 
         fun nextTrack(): TrackEntity? {
@@ -125,6 +150,8 @@ class PlayerService : Service() {
 
                 }
             }
+            //add media player listener to update progress
+
 
             mediaPlayer?.start()
         }
@@ -147,6 +174,14 @@ class PlayerService : Service() {
                 return false
             }
             return true
+        }
+
+        fun seekTo(milliseconds: Int) {
+            mediaPlayer?.seekTo(milliseconds)
+        }
+
+        fun cleanQueue() {
+            queue.clear()
         }
 
 

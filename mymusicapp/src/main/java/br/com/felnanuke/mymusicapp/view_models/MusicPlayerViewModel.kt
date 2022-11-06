@@ -1,87 +1,58 @@
 package br.com.felnanuke.mymusicapp.view_models
 
-import android.content.ComponentName
-import android.content.ServiceConnection
-import android.os.IBinder
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import br.com.felnanuke.mymusicapp.PlayerService
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import linc.com.amplituda.Amplituda
+import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackPlayerManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class MusicPlayerViewModel(private val amplituda: Amplituda) : ViewModel() {
+@HiltViewModel
+class MusicPlayerViewModel @Inject constructor(private val playerManager: TrackPlayerManager) :
+    ViewModel() {
 
-    var playerService: PlayerService? = null
-    var amplitudes = mutableStateOf<List<Int>>(listOf())
+    var amplitudes by mutableStateOf<List<Int>>(listOf())
     var currentTrack by mutableStateOf<TrackEntity?>(null)
-    var serviceConnection = object : ServiceConnection {
+    var playing by mutableStateOf(playerManager.isPlaying.value!!)
+    var canPlayNext by mutableStateOf(playerManager.canPlayNext.value!!)
+    var canPlayPrevious by mutableStateOf(playerManager.canPlayPrevious.value!!)
+    var trackProgress by mutableStateOf(playerManager.trackProgress.value!!)
 
 
-        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-            val binder = p1 as PlayerService.PlayerServiceBinder
-            playerService = binder.getService()
-            onChangeTrack()
+    init {
+        playerManager.currentTrack.observeForever { currentTrack ->
+            this.currentTrack = currentTrack
         }
-
-        override fun onServiceDisconnected(p0: ComponentName?) {
-            playerService = null
+        playerManager.isPlaying.observeForever { isPlaying ->
+            this.playing = isPlaying
         }
-    }
-
-
-    fun onChangeTrack() {
-        loadWaveForm(currentTrack)
-    }
-
-    fun getTrackProgress(): Float {
-        return playerService?.queueManager?.getTrackProgress() ?: 0f
-
-    }
-
-
-    private fun loadWaveForm(currentTrack: TrackEntity?) {
-        CoroutineScope(Dispatchers.IO).launch {
-            currentTrack?.getAudioByteStream?.let { getInputStream ->
-                getInputStream()?.let { inputStream ->
-                    amplituda.processAudio(inputStream).get({ success ->
-                        amplitudes.value = success.amplitudesAsList()
-                    }, { error ->
-                        error.printStackTrace()
-                    })
-                }
-
-
-            }
-
+        playerManager.trackProgress.observeForever { progress ->
+            this.trackProgress = progress
         }
-
-
+        playerManager.canPlayNext.observeForever { canPlayNext ->
+            this.canPlayNext = canPlayNext
+        }
+        playerManager.canPlayPrevious.observeForever { canPlayPrevious ->
+            this.canPlayPrevious = canPlayPrevious
+        }
+        playerManager.amplitudes.observeForever { amplitudes ->
+            this.amplitudes = amplitudes
+        }
     }
 
     fun togglePlay() {
-        playerService?.queueManager?.togglePlayPause()
+        playerManager.togglePlayPause()
     }
 
-    fun getIsPlaying(): Boolean {
-        return playerService?.queueManager?.isPlaying() ?: false
 
+    fun playNext() {
+        playerManager.playNext()
     }
 
-    fun getCanSkipNext(): Boolean {
-        return playerService?.queueManager?.canSkipNext() ?: false
-    }
-
-    fun skipNext() {
-        playerService?.queueManager?.nextTrack()
-    }
-
-    fun skipPrevious() {
-        playerService?.queueManager?.previousTrack()
+    fun playPrevious() {
+        playerManager.playPrevious()
     }
 
 }

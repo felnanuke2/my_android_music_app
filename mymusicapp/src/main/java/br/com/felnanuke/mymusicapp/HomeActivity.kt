@@ -2,15 +2,11 @@ package br.com.felnanuke.mymusicapp
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.registerForActivityResult
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -21,11 +17,11 @@ import br.com.felnanuke.mymusicapp.ui.theme.MyMusicAppTheme
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import br.com.felnanuke.mymusicapp.components.PlayerCollapsed
 import br.com.felnanuke.mymusicapp.components.TrackListTile
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
+import br.com.felnanuke.mymusicapp.core.infrastructure.android.services.PlayerService
 import br.com.felnanuke.mymusicapp.view_models.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -43,16 +39,13 @@ class HomeActivity : ComponentActivity() {
     }
 
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MyMusicAppTheme {
                 homeViewModel = hiltViewModel()
                 requestPermissions()
-                setupServicePlayerService()
                 setupListeners()
-                registerObserver()
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
@@ -63,12 +56,6 @@ class HomeActivity : ComponentActivity() {
         }
     }
 
-
-private fun registerObserver(){
-    PlayerService.currentTrack.observe(this){
-        homeViewModel.currentTrack = it
-    }
-}
 
     private fun setupListeners() {
         homeViewModel.activityEvents.observe(this) {
@@ -91,11 +78,6 @@ private fun registerObserver(){
 
     }
 
-    private fun setupServicePlayerService() {
-        val intent = Intent(this.application, PlayerService::class.java)
-        startService(intent)
-        bindService(intent, homeViewModel.serviceConnection, 0)
-    }
 
 }
 
@@ -130,8 +112,8 @@ fun Body(homeViewModel: HomeViewModel) {
         if (homeViewModel.currentTrack != null) {
             Box(modifier = Modifier.align(Alignment.BottomCenter)) {
                 PlayerCollapsed(trackEntity = homeViewModel.currentTrack!!,
-                    getIsPlaying = { homeViewModel.getIsPlaying() },
-                    getProgress = { homeViewModel.getPlayerProgress() },
+                    playing = homeViewModel.isPlaying,
+                    progress = homeViewModel.trackProgress,
                     togglePlay = { homeViewModel.togglePlayPause() },
                     openExpandedPlayerActivity = { homeViewModel.openExpandedPlayer() })
             }

@@ -6,17 +6,16 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import br.com.felnanuke.mymusicapp.core.domain.data_sources.TracksDataSource
+import br.com.felnanuke.mymusicapp.core.domain.data_sources.ITracksDataSource
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
 import android.provider.MediaStore.Audio
-import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
-class AndroidTracksDataSource(private val context: Context) : TracksDataSource {
+class AndroidTracksDataSource(private val context: Context) : ITracksDataSource {
 
 
     private val collection = Audio.Media.EXTERNAL_CONTENT_URI

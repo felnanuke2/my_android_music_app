@@ -1,78 +1,57 @@
 package br.com.felnanuke.mymusicapp.view_models
 
-import android.app.Application
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
-import android.os.IBinder
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import br.com.felnanuke.mymusicapp.MusicPlayerActivity
-import br.com.felnanuke.mymusicapp.PlayerService
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
+import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackPlayerManager
 import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val trackRepository: TrackRepository, private val application: Application
+    private val trackRepository: TrackRepository, private val playerManager: TrackPlayerManager,
 ) : ViewModel() {
 
-    companion object ActivitiesActions {
 
+    companion object ActivitiesActions {
         const val OPEN_PLAYER_ACTIVITY_ACTION = 0
     }
 
     var loading by mutableStateOf(false)
     var tracks by mutableStateOf(mutableListOf<TrackEntity>())
     var currentTrack by mutableStateOf<TrackEntity?>(null)
-    var progress = 0f
-    var activityEvents = MutableLiveData<Int>()
-
-    var playerService: PlayerService? = null
-
-
-    var serviceConnection = object : ServiceConnection {
+    val activityEvents = MutableLiveData<Int>()
+    var isPlaying by mutableStateOf(playerManager.isPlaying.value!!)
+    var trackProgress by mutableStateOf(playerManager.trackProgress.value!!)
 
 
-        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-            val binder = p1 as PlayerService.PlayerServiceBinder
-            playerService = binder.getService()
-
+    init {
+        playerManager.currentTrack.observeForever { track ->
+            currentTrack = track
         }
-
-        override fun onServiceDisconnected(p0: ComponentName?) {
-            playerService = null
+        playerManager.isPlaying.observeForever { isPlaying ->
+            this.isPlaying = isPlaying
         }
-
-    }
-
-
-
-    fun getIsPlaying(): Boolean {
-        return playerService?.queueManager?.isPlaying() ?: false
+        playerManager.trackProgress.observeForever { progress ->
+            this.trackProgress = progress
+        }
     }
 
     fun togglePlayPause() {
-        playerService?.queueManager?.togglePlayPause()
+        playerManager.togglePlayPause()
     }
 
-    fun getPlayerProgress(): Float {
-        progress = playerService?.queueManager?.getTrackProgress() ?: progress
-        return progress
-
-    }
 
     fun playTrack(trackEntity: TrackEntity) {
-        playerService?.queueManager?.addTrack(trackEntity, true)
+        playerManager.startQueue(trackEntity)
     }
 
     fun insertTrackToPlayList(trackEntity: TrackEntity) {
-        playerService?.queueManager?.addTrack(trackEntity)
+        playerManager.addToQueue(trackEntity)
     }
 
 
