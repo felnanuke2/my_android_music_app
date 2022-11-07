@@ -22,7 +22,6 @@ class AndroidTrackPlayerServices(
         val playerServiceIntent = Intent(application, PlayerService::class.java)
         application.bindService(playerServiceIntent, this, Context.BIND_AUTO_CREATE)
 
-
     }
 
     override val currentTrack = MutableLiveData<TrackEntity?>(null)
@@ -36,6 +35,10 @@ class AndroidTrackPlayerServices(
     override val canPlayPrevious = MutableLiveData<Boolean>(false)
 
     override val amplitudes = MutableLiveData<List<Int>>(listOf())
+
+    override val duration = MutableLiveData<Int>(0)
+
+    override val position = MutableLiveData<Int>(0)
 
     private var playerService: PlayerService? = null
 
@@ -74,6 +77,22 @@ class AndroidTrackPlayerServices(
         queueManager?.togglePlayPause()
     }
 
+    override fun seekTo(milliseconds: Int) {
+        queueManager?.seekTo(milliseconds)
+    }
+
+    override fun seekTo(progress: Float) {
+        queueManager?.seekTo(progress)
+    }
+
+    override fun pause() {
+        queueManager?.pause()
+    }
+
+    override fun play() {
+        queueManager?.play()
+    }
+
     private fun startObserver() {
         queueManager?.currentTrack?.observeForever {
             currentTrack.value = it
@@ -90,6 +109,12 @@ class AndroidTrackPlayerServices(
         }
         queueManager?.canPlayPrevious?.observeForever {
             canPlayPrevious.value = it
+        }
+        queueManager?.durationMillis?.observeForever {
+            duration.value = it
+        }
+        queueManager?.positionMillis?.observeForever {
+            position.value = it
         }
 
     }

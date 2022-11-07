@@ -13,6 +13,12 @@ import kotlin.concurrent.schedule
 
 class PlayerService : Service() {
 
+    inner class PlayerServiceBinder : Binder() {
+        fun getService(): PlayerService {
+            return this@PlayerService
+        }
+    }
+
 
     var queueManager: QueueManager? = null
     private val binder = PlayerServiceBinder()
@@ -33,8 +39,6 @@ class PlayerService : Service() {
 
     }
 
-    /// get the wave form from the track
-
 
     class QueueManager(private val application: Application) {
 
@@ -43,6 +47,8 @@ class PlayerService : Service() {
         val progress = MutableLiveData<Float>(0f)
         val canPlayNext = MutableLiveData<Boolean>(false)
         val canPlayPrevious = MutableLiveData<Boolean>(false)
+        val positionMillis = MutableLiveData<Int>(0)
+        val durationMillis = MutableLiveData<Int>(0)
 
 
         private var mediaPlayer: MediaPlayer? = null
@@ -61,6 +67,11 @@ class PlayerService : Service() {
             Timer().schedule(0, 100) {
                 try {
                     isPlaying.postValue(mediaPlayer?.isPlaying ?: false)
+                    canPlayNext.postValue(canPlayNext())
+                    canPlayPrevious.postValue(canPlayPrevious())
+                    positionMillis.postValue(mediaPlayer?.currentPosition ?: 0)
+                    durationMillis.postValue(mediaPlayer?.duration ?: 0)
+
                     if (isPlaying.value!!) {
                         progress.postValue(
                             getTrackProgress()
@@ -86,11 +97,11 @@ class PlayerService : Service() {
             return oldProgress
         }
 
-        fun queueIsEnd(): Boolean {
+        private fun queueIsEnd(): Boolean {
             return currentTrack.value == queue.last()
         }
 
-        fun getCurrentTrackIndex(): Int {
+        private fun getCurrentTrackIndex(): Int {
             return queue.indexOf(currentTrack.value)
         }
 
@@ -134,23 +145,21 @@ class PlayerService : Service() {
         }
 
 
-        fun playTrack(track: TrackEntity) {
+        private fun playTrack(track: TrackEntity) {
             mediaPlayer?.audioSessionId
             mediaPlayer?.stop()
             mediaPlayer?.release()
             mediaPlayer = MediaPlayer.create(this.application.applicationContext, track.audioUri)
             mediaPlayer!!.setOnCompletionListener {
                 if (queueIsEnd()) {
-                    currentTrack.value = null
-                    mediaPlayer?.stop()
-                    mediaPlayer?.release()
-                    mediaPlayer = null
+                    mediaPlayer?.seekTo(0)
+                    mediaPlayer?.pause()
+
                 } else {
                     nextTrack()
 
                 }
             }
-            //add media player listener to update progress
 
 
             mediaPlayer?.start()
@@ -164,12 +173,12 @@ class PlayerService : Service() {
             }
         }
 
-        fun isPlaying(): Boolean? {
-            return mediaPlayer?.isPlaying
 
+        private fun canPlayPrevious(): Boolean {
+            return getCurrentTrackIndex() > 0
         }
 
-        fun canSkipNext(): Boolean {
+        private fun canPlayNext(): Boolean {
             if (getCurrentTrackIndex() == queue.size - 1) {
                 return false
             }
@@ -180,17 +189,24 @@ class PlayerService : Service() {
             mediaPlayer?.seekTo(milliseconds)
         }
 
+        fun seekTo(progress: Float) {
+            mediaPlayer?.seekTo((mediaPlayer?.duration?.times(progress))?.toInt() ?: 0)
+        }
+
         fun cleanQueue() {
             queue.clear()
         }
 
+        fun pause() {
+            mediaPlayer?.pause()
 
-    }
-
-    inner class PlayerServiceBinder : Binder() {
-        fun getService(): PlayerService {
-            return this@PlayerService
         }
+
+        fun play() {
+            mediaPlayer?.start()
+        }
+
+
     }
 
 

@@ -10,6 +10,8 @@ interface ITrackPlayerServices {
     val canPlayNext: MutableLiveData<Boolean>
     val canPlayPrevious: MutableLiveData<Boolean>
     val amplitudes: MutableLiveData<List<Int>>
+    val duration: MutableLiveData<Int>
+    val position: MutableLiveData<Int>
 
 
     fun playNext()
@@ -18,4 +20,8 @@ interface ITrackPlayerServices {
     fun removeFromQueue(index: Int)
     fun cleanQueue()
     fun togglePlayAndPause()
+    fun seekTo(milliseconds: Int)
+    fun seekTo(progress: Float)
+    fun pause()
+    fun play()
 }

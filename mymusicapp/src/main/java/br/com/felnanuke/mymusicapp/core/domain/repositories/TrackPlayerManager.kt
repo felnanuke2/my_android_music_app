@@ -18,6 +18,10 @@ class TrackPlayerManager(private val trackPlayerServices: ITrackPlayerServices) 
         get() = trackPlayerServices.trackProgress
     val amplitudes: MutableLiveData<List<Int>>
         get() = trackPlayerServices.amplitudes
+    val durationMillis: MutableLiveData<Int>
+        get() = trackPlayerServices.duration
+    val positionMillis: MutableLiveData<Int>
+        get() = trackPlayerServices.position
 
 
     fun togglePlayPause() {
@@ -32,9 +36,12 @@ class TrackPlayerManager(private val trackPlayerServices: ITrackPlayerServices) 
     }
 
     fun playPrevious() {
-        if (canPlayPrevious.value!!) {
+        if (trackProgress.value!! > 0.1f || !canPlayPrevious.value!!) {
+            trackPlayerServices.seekTo(0)
+        } else {
             trackPlayerServices.playPrevious()
         }
+
     }
 
     fun addToQueue(track: TrackEntity, playNow: Boolean = false) {
@@ -48,6 +55,18 @@ class TrackPlayerManager(private val trackPlayerServices: ITrackPlayerServices) 
     fun startQueue(track: TrackEntity) {
         trackPlayerServices.cleanQueue()
         addToQueue(track, true)
+    }
+
+    fun seekTo(progress: Float) {
+        trackPlayerServices.seekTo(progress)
+    }
+
+    fun pause() {
+        trackPlayerServices.pause()
+    }
+
+    fun play() {
+        trackPlayerServices.play()
     }
 
 
