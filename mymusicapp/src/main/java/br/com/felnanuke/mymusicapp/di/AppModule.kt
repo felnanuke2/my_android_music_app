@@ -1,16 +1,10 @@
 package br.com.felnanuke.mymusicapp.di
 
 import android.app.Application
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
-import android.os.IBinder
-import androidx.activity.ComponentActivity
 import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackPlayerManager
 import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackRepository
 import br.com.felnanuke.mymusicapp.core.infrastructure.android.data_sources.AndroidTracksDataSource
 import br.com.felnanuke.mymusicapp.core.infrastructure.android.services.AndroidTrackPlayerServices
-import br.com.felnanuke.mymusicapp.core.infrastructure.android.services.PlayerService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

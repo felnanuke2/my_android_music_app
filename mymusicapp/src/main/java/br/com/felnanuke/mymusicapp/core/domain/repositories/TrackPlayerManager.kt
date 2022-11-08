@@ -22,6 +22,8 @@ class TrackPlayerManager(private val trackPlayerServices: ITrackPlayerServices) 
         get() = trackPlayerServices.duration
     val positionMillis: MutableLiveData<Int>
         get() = trackPlayerServices.position
+    val queue: MutableLiveData<List<TrackEntity>>
+        get() = trackPlayerServices.queue
 
 
     fun togglePlayPause() {
@@ -69,5 +71,12 @@ class TrackPlayerManager(private val trackPlayerServices: ITrackPlayerServices) 
         trackPlayerServices.play()
     }
 
+    fun setQueue(queue: List<TrackEntity>) {
+        trackPlayerServices.setQueue(queue)
+    }
+
+    fun reorderQueue(from: Int, to: Int) {
+        trackPlayerServices.reorderQueue(from, to)
+    }
 
 }

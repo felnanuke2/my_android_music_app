@@ -48,7 +48,7 @@ fun PlayerScreen(viewModel: MusicPlayerViewModel, popRoute: () -> Unit = {}) {
             }
 
         }, actions = {
-            IconButton(onClick = {}) {
+            IconButton(onClick = viewModel::openPlaylist) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_baseline_playlist_play_24),
                     contentDescription = null
@@ -147,7 +147,7 @@ fun WaveForm(
     AudioWaveform(
         amplitudes = amplitudes,
         progress = progress,
-        height = 48.dp,
+        height = 68.dp,
         onProgressChange = onProgressChanged,
         onProgressChangeFinished = onProgressChangedFinished,
         waveformBrush = SolidColor(Color.Gray),
@@ -293,7 +293,7 @@ fun DefaultPreview4() {
 fun DefaultPreview3() {
     MyMusicAppTheme {
         CdAnimation(
-            trackEntity = TrackEntity(
+            trackEntity = TrackEntity(0,
                 "Todo Mundo Vai Sofrer", "Marilia Mendonça", Uri.parse(""), Uri.parse(""), 2000
             ), playing = true
         )

@@ -40,7 +40,7 @@ class MusicPlayerActivity : ComponentActivity() {
                         startDestination = "player"
                     ) {
                         composable("player") {
-                            PlayerScreen(musicPlayerViewModel)
+                            PlayerScreen(musicPlayerViewModel, this@MusicPlayerActivity::finish)
                         }
                         composable("playlist") {
                             PlaylistScreen(viewModel = musicPlayerViewModel)
@@ -76,9 +76,14 @@ class MusicPlayerActivity : ComponentActivity() {
             musicPlayerViewModel.trackPositionMillis = positionMillis
         }
 
-        musicPlayerViewModel.playerManager.durationMillis.observe(this) { durationMillis ->
+        musicPlayerViewModel.playerManager.durationMillis.observe( this) { durationMillis ->
             musicPlayerViewModel.trackDuration = durationMillis
         }
+        musicPlayerViewModel.playerManager.queue.observe(this) { queue ->
+            musicPlayerViewModel.queueTracks = queue
+            musicPlayerViewModel.queue = queue
+        }
+
 
     }
 }

@@ -6,10 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -19,9 +16,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.felnanuke.mymusicapp.CdAnimation
 import br.com.felnanuke.mymusicapp.R
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
+import br.com.felnanuke.mymusicapp.screens.CdAnimation
 
 @Composable
 fun PlayerCollapsed(
@@ -31,7 +28,7 @@ fun PlayerCollapsed(
     togglePlay: () -> Unit,
     openExpandedPlayerActivity: () -> Unit
 ) {
-    Card(backgroundColor = MaterialTheme.colorScheme.primary,
+    Card(backgroundColor = MaterialTheme.colorScheme.primaryContainer,
         shape = RoundedCornerShape(0.dp),
         modifier = Modifier
             .padding(0.dp)
@@ -56,7 +53,7 @@ fun PlayerCollapsed(
                         text = trackEntity.name, style = TextStyle(
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         ), maxLines = 1, overflow = TextOverflow.Ellipsis
                     )
                     Text(
@@ -64,7 +61,7 @@ fun PlayerCollapsed(
                         style = TextStyle(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.ExtraLight,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
                     )
                 }
@@ -74,7 +71,7 @@ fun PlayerCollapsed(
                         painter = painterResource(id = if (playing) R.drawable.ic_baseline_pause_circle_outline_24 else R.drawable.ic_baseline_play_circle_outline_24),
                         contentDescription = null,
                         modifier = Modifier.size(42.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
 
                     )
                 }
@@ -86,7 +83,7 @@ fun PlayerCollapsed(
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth(),
                     progress = progress,
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
 
                     )
             }
@@ -101,7 +98,7 @@ fun PlayerCollapsed(
 @Preview
 @Composable
 fun PlayerCollapsedPreview() {
-    PlayerCollapsed(TrackEntity(
+    PlayerCollapsed(TrackEntity(0,
         "Track 2", "Artist 2", Uri.parse(""), Uri.parse(""), 23
     ), playing = true, progress = 0.5f, togglePlay = {}, openExpandedPlayerActivity = {})
 

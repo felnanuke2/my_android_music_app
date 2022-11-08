@@ -40,6 +40,8 @@ class AndroidTrackPlayerServices(
 
     override val position = MutableLiveData<Int>(0)
 
+    override val queue = MutableLiveData<List<TrackEntity>>(listOf())
+
     private var playerService: PlayerService? = null
 
     private val queueManager: PlayerService.QueueManager?
@@ -71,6 +73,10 @@ class AndroidTrackPlayerServices(
 
     override fun cleanQueue() {
         queueManager?.cleanQueue()
+    }
+
+    override fun setQueue(queue: List<TrackEntity>) {
+        queueManager?.setQueue(queue)
     }
 
     override fun togglePlayAndPause() {
@@ -116,6 +122,10 @@ class AndroidTrackPlayerServices(
         queueManager?.positionMillis?.observeForever {
             position.value = it
         }
+        queueManager?.queue?.observeForever {
+            queue.value = it
+
+        }
 
     }
 
@@ -129,6 +139,10 @@ class AndroidTrackPlayerServices(
 
     override fun onServiceDisconnected(p0: ComponentName?) {
         playerService = null
+    }
+
+    override fun reorderQueue(from: Int, to: Int) {
+        queueManager?.reorderQueue(from, to)
     }
 
     private fun loadWaveForm() {

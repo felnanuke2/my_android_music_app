@@ -14,12 +14,13 @@ import javax.inject.Inject
 @HiltViewModel
 class MusicPlayerViewModel @Inject constructor(val playerManager: TrackPlayerManager) :
     ViewModel() {
+    var queue: List<TrackEntity> = playerManager.queue.value ?: emptyList()
 
     var queueTracks by mutableStateOf<List<TrackEntity>>(listOf())
     var loading by mutableStateOf(false)
     var amplitudes by mutableStateOf<List<Int>>(listOf())
     var currentTrack by mutableStateOf<TrackEntity?>(null)
-    var playing by mutableStateOf<Boolean>(playerManager.isPlaying.value!!)
+    var playing by mutableStateOf(playerManager.isPlaying.value!!)
     var canPlayNext by mutableStateOf(playerManager.canPlayNext.value!!)
     var canPlayPrevious by mutableStateOf(playerManager.canPlayPrevious.value!!)
     var trackProgress by mutableStateOf(playerManager.trackProgress.value!!)
@@ -60,6 +61,20 @@ class MusicPlayerViewModel @Inject constructor(val playerManager: TrackPlayerMan
     fun onProgressFinished() {
         playerManager.seekTo(tempProgress)
         playerManager.play()
+    }
+
+    fun openPlaylist() {
+        navController.navigate("playlist")
+    }
+
+
+    fun popBackStack() {
+        navController.popBackStack()
+    }
+
+    fun reorderQueue(from: Int, to: Int) {
+        playerManager.reorderQueue(from, to)
+
     }
 
 

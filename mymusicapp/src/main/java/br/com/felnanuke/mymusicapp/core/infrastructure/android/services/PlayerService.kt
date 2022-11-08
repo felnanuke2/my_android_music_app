@@ -4,11 +4,15 @@ import android.app.Application
 import android.app.Service
 import android.content.Intent
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Binder
 import android.os.IBinder
 import androidx.lifecycle.MutableLiveData
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
+import br.com.felnanuke.mymusicapp.core.infrastructure.android.models.ListableTrackModel
+import java.io.InputStream
 import java.util.Timer
+import java.util.UUID
 import kotlin.concurrent.schedule
 
 class PlayerService : Service() {
@@ -49,11 +53,8 @@ class PlayerService : Service() {
         val canPlayPrevious = MutableLiveData<Boolean>(false)
         val positionMillis = MutableLiveData<Int>(0)
         val durationMillis = MutableLiveData<Int>(0)
-
-
+        val queue = MutableLiveData<MutableList<ListableTrackModel>>(mutableListOf())
         private var mediaPlayer: MediaPlayer? = null
-
-        private var queue: MutableList<TrackEntity> = mutableListOf()
 
         private var oldProgress = 0f
 
@@ -98,19 +99,19 @@ class PlayerService : Service() {
         }
 
         private fun queueIsEnd(): Boolean {
-            return currentTrack.value == queue.last()
+            return currentTrack.value == queue.value!!.last()
         }
 
         private fun getCurrentTrackIndex(): Int {
-            return queue.indexOf(currentTrack.value)
+            return queue.value!!.indexOf(currentTrack.value)
         }
 
         fun addTrackToQueue(track: TrackEntity, play: Boolean = false) {
-            queue.add(track)
+            queue.value!!.add(ListableTrackModel(track))
             if (play) {
                 playTrack(track)
                 currentTrack.value = track
-            } else if (queue.isEmpty()) {
+            } else if (queue.value!!.isEmpty()) {
                 playTrack(track)
                 currentTrack.value = track
             }
@@ -118,15 +119,15 @@ class PlayerService : Service() {
 
 
         fun removeTrack(index: Int) {
-            queue.removeAt(index)
+            queue.value!!.removeAt(index)
         }
 
         fun nextTrack(): TrackEntity? {
 
-            if (getCurrentTrackIndex() == queue.size - 1) {
+            if (getCurrentTrackIndex() == queue.value!!.size - 1) {
                 return null
             }
-            val nextTrack = queue.elementAt(getCurrentTrackIndex() + 1)
+            val nextTrack = queue.value!!.elementAt(getCurrentTrackIndex() + 1)
             playTrack(nextTrack)
             currentTrack.value = nextTrack
             playTrack(nextTrack)
@@ -137,7 +138,7 @@ class PlayerService : Service() {
             if (getCurrentTrackIndex() == 0) {
                 return null
             }
-            val previousTrack = queue.elementAt(getCurrentTrackIndex() - 1)
+            val previousTrack = queue.value!!.elementAt(getCurrentTrackIndex() - 1)
             playTrack(previousTrack)
             currentTrack.value = previousTrack
             playTrack(previousTrack)
@@ -179,7 +180,7 @@ class PlayerService : Service() {
         }
 
         private fun canPlayNext(): Boolean {
-            if (getCurrentTrackIndex() == queue.size - 1) {
+            if (getCurrentTrackIndex() == queue.value!!.size - 1) {
                 return false
             }
             return true
@@ -189,12 +190,16 @@ class PlayerService : Service() {
             mediaPlayer?.seekTo(milliseconds)
         }
 
+        fun reorderQueue(from: Int, to: Int) {
+            queue.value!!.apply { add(to, removeAt(from)) }
+        }
+
         fun seekTo(progress: Float) {
             mediaPlayer?.seekTo((mediaPlayer?.duration?.times(progress))?.toInt() ?: 0)
         }
 
         fun cleanQueue() {
-            queue.clear()
+            queue.value?.clear()
         }
 
         fun pause() {
@@ -204,6 +209,10 @@ class PlayerService : Service() {
 
         fun play() {
             mediaPlayer?.start()
+        }
+
+        fun setQueue(queue: List<TrackEntity>) {
+            this.queue.value = queue.map { ListableTrackModel(it) }.toMutableList()
         }
 
 

@@ -25,13 +25,13 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
                 .fillMaxSize()
                 .padding(8.dp)
         ) {
-            if (homeViewModel.loading!!) {
+            if (homeViewModel.loading) {
                 CircularProgressIndicator()
-            } else if (homeViewModel.tracks!!.isEmpty()) {
+            } else if (homeViewModel.tracks.isEmpty()) {
                 Text(text = "No tracks found")
             } else {
                 TracksList(currentTrack = homeViewModel.currentTrack,
-                    tracks = homeViewModel.tracks!!,
+                    tracks = homeViewModel.tracks,
                     playTrack = { track ->
                         homeViewModel.playTrack(track)
                     },
@@ -64,14 +64,17 @@ fun TracksList(
     insertTrack: (TrackEntity) -> Unit = {},
     currentTrack: TrackEntity? = null,
 
+
     ) {
     LazyColumn(contentPadding = PaddingValues(bottom = 64.dp)) {
         items(tracks.size) { index ->
             TrackListTile(
+                Modifier,
                 tracks[index],
                 playTrack = playTrack,
                 insertTrack = insertTrack,
-                currentTrack == tracks[index]
+                currentTrack == tracks[index],
+                leadingIcon = null
             )
         }
     }
@@ -90,7 +93,7 @@ fun DefaultPreview() {
 fun ListPreview() {
     TracksList(
         tracks = listOf(
-            TrackEntity(
+            TrackEntity(0,
                 "Todo Mundo Vai Sofrer", "Marilia Mendonça", Uri.parse(""), Uri.parse(""), 2000
             )
         ),

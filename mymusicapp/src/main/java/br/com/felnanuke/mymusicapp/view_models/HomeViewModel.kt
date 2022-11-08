@@ -16,11 +16,6 @@ class HomeViewModel @Inject constructor(
     private val trackRepository: TrackRepository, private val playerManager: TrackPlayerManager,
 ) : ViewModel() {
 
-
-    companion object ActivitiesActions {
-        const val OPEN_PLAYER_ACTIVITY_ACTION = 0
-    }
-
     var loading by mutableStateOf(false)
     var tracks by mutableStateOf(mutableListOf<TrackEntity>())
     var currentTrack by mutableStateOf<TrackEntity?>(null)
@@ -39,6 +34,11 @@ class HomeViewModel @Inject constructor(
         playerManager.trackProgress.observeForever { progress ->
             this.trackProgress = progress
         }
+    }
+
+
+    companion object ActivitiesActions {
+        const val OPEN_PLAYER_ACTIVITY_ACTION = 0
     }
 
     fun togglePlayPause() {
