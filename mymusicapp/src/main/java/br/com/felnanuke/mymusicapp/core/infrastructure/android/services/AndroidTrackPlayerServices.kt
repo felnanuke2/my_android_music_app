@@ -99,6 +99,10 @@ class AndroidTrackPlayerServices(
         queueManager?.play()
     }
 
+    override fun play(track: TrackEntity) {
+        queueManager?.play(track)
+    }
+
     private fun startObserver() {
         queueManager?.currentTrack?.observeForever {
             currentTrack.value = it

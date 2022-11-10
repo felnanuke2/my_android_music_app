@@ -1,7 +1,6 @@
 package br.com.felnanuke.mymusicapp.components
 
 import android.net.Uri
-import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -32,7 +32,6 @@ import br.com.felnanuke.mymusicapp.R
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
 import br.com.felnanuke.mymusicapp.ui.theme.MyMusicAppTheme
 import coil.compose.AsyncImage
-import coil.compose.AsyncImagePainter
 
 
 @Composable
@@ -44,6 +43,7 @@ fun TrackListTile(
     playing: Boolean = false,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
+    activateAnimation: Boolean = false,
 
     ) {
     var expanded by remember { mutableStateOf(false) }
@@ -86,12 +86,12 @@ fun TrackListTile(
                 .padding(start = 8.dp, end = 8.dp)
                 .weight(1f)
         ) {
-            Text(
-                text = trackEntity.name, style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (playing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                ), maxLines = 1, overflow = TextOverflow.Ellipsis
+            MarqueeText(
+                text = trackEntity.name,
+                style = MaterialTheme.typography.titleSmall.copy(color = if (playing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground),
+                overflow = TextOverflow.Ellipsis,
+                activated = activateAnimation,
+                gradientEdgeColor = Color.Transparent
             )
             Text(
                 text = trackEntity.artistName,
@@ -137,7 +137,7 @@ fun TrackListTile(
 @Composable
 fun DefaultPreview() {
     MyMusicAppTheme {
-        TrackListTile(Modifier,TrackEntity(
+        TrackListTile(Modifier, TrackEntity(
             0,
             "Todo Mundo Vai Sofrer",
             "Marilia Mendonça",

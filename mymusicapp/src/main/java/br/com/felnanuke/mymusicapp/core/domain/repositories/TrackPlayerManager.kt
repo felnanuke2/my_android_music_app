@@ -71,6 +71,10 @@ class TrackPlayerManager(private val trackPlayerServices: ITrackPlayerServices) 
         trackPlayerServices.play()
     }
 
+    fun play(track: TrackEntity) {
+        trackPlayerServices.play(track)
+    }
+
     fun setQueue(queue: List<TrackEntity>) {
         trackPlayerServices.setQueue(queue)
     }

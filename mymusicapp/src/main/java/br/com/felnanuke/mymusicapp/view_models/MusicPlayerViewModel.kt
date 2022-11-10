@@ -4,7 +4,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
 import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackPlayerManager
@@ -15,7 +14,6 @@ import javax.inject.Inject
 class MusicPlayerViewModel @Inject constructor(val playerManager: TrackPlayerManager) :
     ViewModel() {
     var queue: List<TrackEntity> = playerManager.queue.value ?: emptyList()
-
     var queueTracks by mutableStateOf<List<TrackEntity>>(listOf())
     var loading by mutableStateOf(false)
     var amplitudes by mutableStateOf<List<Int>>(listOf())
@@ -74,6 +72,15 @@ class MusicPlayerViewModel @Inject constructor(val playerManager: TrackPlayerMan
 
     fun reorderQueue(from: Int, to: Int) {
         playerManager.reorderQueue(from, to)
+
+    }
+
+    fun playTrack(track: TrackEntity) {
+        playerManager.play(track)
+    }
+
+    fun setCurrentTrack(index: Int) {
+        playTrack(queueTracks[index])
 
     }
 

@@ -5,10 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
+import androidx.compose.material.Colors
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -49,12 +51,12 @@ fun PlayerCollapsed(
                         .padding(start = 8.dp, end = 8.dp)
                         .weight(1f)
                 ) {
-                    Text(
-                        text = trackEntity.name, style = TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        ), maxLines = 1, overflow = TextOverflow.Ellipsis
+                    MarqueeText(
+                        text = trackEntity.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        activated = playing,
+                        gradientEdgeColor = if (playing) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+
                     )
                     Text(
                         text = trackEntity.artistName,
@@ -98,8 +100,8 @@ fun PlayerCollapsed(
 @Preview
 @Composable
 fun PlayerCollapsedPreview() {
-    PlayerCollapsed(TrackEntity(0,
-        "Track 2", "Artist 2", Uri.parse(""), Uri.parse(""), 23
+    PlayerCollapsed(TrackEntity(
+        0, "Track 2", "Artist 2", Uri.parse(""), Uri.parse(""), 23
     ), playing = true, progress = 0.5f, togglePlay = {}, openExpandedPlayerActivity = {})
 
 }

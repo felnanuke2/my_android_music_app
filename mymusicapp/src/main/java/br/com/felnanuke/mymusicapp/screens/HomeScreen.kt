@@ -73,7 +73,7 @@ fun TracksList(
                 tracks[index],
                 playTrack = playTrack,
                 insertTrack = insertTrack,
-                currentTrack == tracks[index],
+                currentTrack?.id == tracks[index].id,
                 leadingIcon = null
             )
         }
@@ -93,8 +93,8 @@ fun DefaultPreview() {
 fun ListPreview() {
     TracksList(
         tracks = listOf(
-            TrackEntity(0,
-                "Todo Mundo Vai Sofrer", "Marilia Mendonça", Uri.parse(""), Uri.parse(""), 2000
+            TrackEntity(
+                0, "Todo Mundo Vai Sofrer", "Marilia Mendonça", Uri.parse(""), Uri.parse(""), 2000
             )
         ),
     )

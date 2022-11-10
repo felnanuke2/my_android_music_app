@@ -16,26 +16,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import br.com.felnanuke.mymusicapp.R
+import br.com.felnanuke.mymusicapp.components.MarqueeText
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
 import br.com.felnanuke.mymusicapp.ui.theme.MyMusicAppTheme
 import br.com.felnanuke.mymusicapp.view_models.MusicPlayerViewModel
 import coil.compose.AsyncImage
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 import com.linc.audiowaveform.AudioWaveform
 import com.linc.audiowaveform.model.AmplitudeType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
 @Composable
 fun PlayerScreen(viewModel: MusicPlayerViewModel, popRoute: () -> Unit = {}) {
     Scaffold(topBar = {
@@ -64,20 +68,27 @@ fun PlayerScreen(viewModel: MusicPlayerViewModel, popRoute: () -> Unit = {}) {
                     .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                viewModel.currentTrack?.let { track ->
+                val pageState = rememberPagerState()
+                LaunchedEffect(key1 = pageState) {
+                    snapshotFlow { pageState.currentPage }.collect { page ->
+                        viewModel.setCurrentTrack(page)
+                    }
+                }
+                HorizontalPager(count = viewModel.queueTracks.count(), state = pageState) {
                     CdAnimation(
-                        trackEntity = track,
+                        trackEntity = viewModel.queueTracks[it],
                         viewModel.playing,
                         padding = 0.dp,
                         size = constrained.maxWidth
                     )
+                }
+                viewModel.currentTrack?.let { track ->
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text(
+                    MarqueeText(
                         text = track.name,
                         style = MaterialTheme.typography.titleMedium.copy(textAlign = TextAlign.Center),
-                        modifier = Modifier.height(32.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        gradientEdgeColor = if (viewModel.playing) MaterialTheme.colorScheme.background else Color.Transparent,
+                        activated = viewModel.playing
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
@@ -234,6 +245,7 @@ fun CdAnimation(
             .aspectRatio(1f)
             .clip(CircleShape)
             .padding(padding)
+            .shadow(elevation = 16.dp)
 
     ) {
         val boxWithConstraints = this
@@ -249,12 +261,13 @@ fun CdAnimation(
             AsyncImage(
                 model = trackEntity.imageUri,
 
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentDescription = null, contentScale = ContentScale.Crop,
+
                 modifier = Modifier
                     .aspectRatio(1f)
                     .clip(shape = CircleShape)
                     .rotate(rotation)
+
             )
         }
 
@@ -293,8 +306,8 @@ fun DefaultPreview4() {
 fun DefaultPreview3() {
     MyMusicAppTheme {
         CdAnimation(
-            trackEntity = TrackEntity(0,
-                "Todo Mundo Vai Sofrer", "Marilia Mendonça", Uri.parse(""), Uri.parse(""), 2000
+            trackEntity = TrackEntity(
+                0, "Todo Mundo Vai Sofrer", "Marilia Mendonça", Uri.parse(""), Uri.parse(""), 2000
             ), playing = true
         )
     }

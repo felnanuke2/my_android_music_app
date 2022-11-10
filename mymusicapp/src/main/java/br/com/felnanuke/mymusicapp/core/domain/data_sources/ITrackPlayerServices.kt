@@ -26,5 +26,6 @@ interface ITrackPlayerServices {
     fun seekTo(progress: Float)
     fun pause()
     fun play()
+    fun play(track: TrackEntity)
     fun reorderQueue(from: Int, to: Int)
 }

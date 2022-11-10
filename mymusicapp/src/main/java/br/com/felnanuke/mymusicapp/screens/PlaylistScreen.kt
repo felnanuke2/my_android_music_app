@@ -60,7 +60,7 @@ fun PlaylistScreen(viewModel: MusicPlayerViewModel) {
                 } else {
                     TracksQueue(
                         tracks = viewModel.queue,
-                        playTrack = {},
+                        playTrack = viewModel::playTrack,
                         currentTrack = viewModel.currentTrack,
                         onReorderQueue = viewModel::reorderQueue
                     )
@@ -106,6 +106,7 @@ fun TracksQueue(
                         )
                     },
                     playing = data.value[index] == currentTrack,
+                    activateAnimation = data.value[index] == currentTrack,
                     trailingIcon = {
 
                     }

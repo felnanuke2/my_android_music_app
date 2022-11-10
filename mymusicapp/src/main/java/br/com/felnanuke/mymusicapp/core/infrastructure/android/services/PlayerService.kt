@@ -4,15 +4,12 @@ import android.app.Application
 import android.app.Service
 import android.content.Intent
 import android.media.MediaPlayer
-import android.net.Uri
 import android.os.Binder
 import android.os.IBinder
 import androidx.lifecycle.MutableLiveData
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
 import br.com.felnanuke.mymusicapp.core.infrastructure.android.models.ListableTrackModel
-import java.io.InputStream
 import java.util.Timer
-import java.util.UUID
 import kotlin.concurrent.schedule
 
 class PlayerService : Service() {
@@ -40,7 +37,6 @@ class PlayerService : Service() {
         if (queueManager == null) {
             queueManager = QueueManager(this.application)
         }
-
     }
 
 
@@ -63,7 +59,16 @@ class PlayerService : Service() {
         }
 
 
+        fun TrackEntity.index(): Int {
+            return if (queue.value!!.contains(this)) {
+                queue.value!!.indexOf(this)
+            } else {
+                -1
+            }
+        }
+
         private fun startProgressTimer() {
+
 
             Timer().schedule(0, 100) {
                 try {
@@ -107,13 +112,14 @@ class PlayerService : Service() {
         }
 
         fun addTrackToQueue(track: TrackEntity, play: Boolean = false) {
-            queue.value!!.add(ListableTrackModel(track))
+            val listableTrack = ListableTrackModel(track)
+            queue.value!!.add(listableTrack)
             if (play) {
-                playTrack(track)
-                currentTrack.value = track
+                playTrack(listableTrack)
+                currentTrack.value = listableTrack
             } else if (queue.value!!.isEmpty()) {
-                playTrack(track)
-                currentTrack.value = track
+                playTrack(listableTrack)
+                currentTrack.value = listableTrack
             }
         }
 
@@ -147,10 +153,12 @@ class PlayerService : Service() {
 
 
         private fun playTrack(track: TrackEntity) {
-            mediaPlayer?.audioSessionId
             mediaPlayer?.stop()
-            mediaPlayer?.release()
             mediaPlayer = MediaPlayer.create(this.application.applicationContext, track.audioUri)
+            mediaPlayer?.setOnPreparedListener {
+                it.start()
+
+            }
             mediaPlayer!!.setOnCompletionListener {
                 if (queueIsEnd()) {
                     mediaPlayer?.seekTo(0)
@@ -163,7 +171,6 @@ class PlayerService : Service() {
             }
 
 
-            mediaPlayer?.start()
         }
 
         fun togglePlayPause() {
@@ -210,6 +217,16 @@ class PlayerService : Service() {
         fun play() {
             mediaPlayer?.start()
         }
+
+        fun play(track: TrackEntity) {
+            val index = track.index()
+            if (index == currentTrack.value?.index()) return
+            if (index != -1) {
+                playTrack(track)
+                currentTrack.value = track
+            }
+        }
+
 
         fun setQueue(queue: List<TrackEntity>) {
             this.queue.value = queue.map { ListableTrackModel(it) }.toMutableList()
