@@ -61,6 +61,7 @@ class MusicPlayerActivity : ComponentActivity() {
         }
         musicPlayerViewModel.playerManager.currentTrack.observe(this) { track ->
             musicPlayerViewModel.currentTrack = track
+            musicPlayerViewModel.trackIndex = musicPlayerViewModel.trackIndex(track)
         }
         musicPlayerViewModel.playerManager.canPlayNext.observe(this) { canPlayNext ->
             musicPlayerViewModel.canPlayNext = canPlayNext ?: false
@@ -76,7 +77,7 @@ class MusicPlayerActivity : ComponentActivity() {
             musicPlayerViewModel.trackPositionMillis = positionMillis
         }
 
-        musicPlayerViewModel.playerManager.durationMillis.observe( this) { durationMillis ->
+        musicPlayerViewModel.playerManager.durationMillis.observe(this) { durationMillis ->
             musicPlayerViewModel.trackDuration = durationMillis
         }
         musicPlayerViewModel.playerManager.queue.observe(this) { queue ->

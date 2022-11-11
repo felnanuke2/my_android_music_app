@@ -24,6 +24,7 @@ class MusicPlayerViewModel @Inject constructor(val playerManager: TrackPlayerMan
     var trackProgress by mutableStateOf(playerManager.trackProgress.value!!)
     var trackDuration by mutableStateOf(playerManager.durationMillis.value!!)
     var trackPositionMillis by mutableStateOf(playerManager.positionMillis.value!!)
+    var trackIndex = 0
     private var tempProgress = 0f
     lateinit var navController: NavHostController
 
@@ -80,8 +81,14 @@ class MusicPlayerViewModel @Inject constructor(val playerManager: TrackPlayerMan
     }
 
     fun setCurrentTrack(index: Int) {
+        if (trackIndex == index) return
         playTrack(queueTracks[index])
 
+    }
+
+
+    fun trackIndex(track: TrackEntity?): Int {
+        return queueTracks.indexOf(track)
     }
 
 

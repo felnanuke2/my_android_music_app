@@ -1,9 +1,7 @@
 package br.com.felnanuke.mymusicapp.screens
 
 import android.net.Uri
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -22,6 +20,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -37,6 +36,7 @@ import com.google.accompanist.pager.rememberPagerState
 import com.linc.audiowaveform.AudioWaveform
 import com.linc.audiowaveform.model.AmplitudeType
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
@@ -63,40 +63,76 @@ fun PlayerScreen(viewModel: MusicPlayerViewModel, popRoute: () -> Unit = {}) {
         BoxWithConstraints {
             val constrained = this
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
+                modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val pageState = rememberPagerState()
+                val pageState = rememberPagerState(viewModel.trackIndex(viewModel.currentTrack))
+
                 LaunchedEffect(key1 = pageState) {
-                    snapshotFlow { pageState.currentPage }.collect { page ->
+                    if (pageState.currentPage != viewModel.trackIndex) {
+                        pageState.scrollToPage(viewModel.trackIndex(viewModel.currentTrack))
+                    }
+                    snapshotFlow {
+                        pageState.currentPage
+                    }.collect { page ->
                         viewModel.setCurrentTrack(page)
                     }
                 }
-                HorizontalPager(count = viewModel.queueTracks.count(), state = pageState) {
-                    CdAnimation(
-                        trackEntity = viewModel.queueTracks[it],
-                        viewModel.playing,
-                        padding = 0.dp,
-                        size = constrained.maxWidth
-                    )
+
+                LaunchedEffect(key1 = viewModel.currentTrack) {
+                    snapshotFlow { viewModel.trackIndex(viewModel.currentTrack) }.collect { index ->
+                        pageState.animateScrollToPage(index)
+
+                    }
                 }
-                viewModel.currentTrack?.let { track ->
-                    Spacer(modifier = Modifier.size(8.dp))
-                    MarqueeText(
-                        text = track.name,
-                        style = MaterialTheme.typography.titleMedium.copy(textAlign = TextAlign.Center),
-                        gradientEdgeColor = if (viewModel.playing) MaterialTheme.colorScheme.background else Color.Transparent,
-                        activated = viewModel.playing
-                    )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text(
-                        text = track.artistName,
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.height(16.dp)
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
+
+                HorizontalPager(count = viewModel.queueTracks.count(), state = pageState) {
+                    Column {
+                        Box(modifier = Modifier.padding(horizontal = 32.dp)) {
+                            CdAnimation(
+                                trackEntity = viewModel.queueTracks[it],
+                                viewModel.playing && viewModel.currentTrack == viewModel.queueTracks[it],
+                                padding = 0.dp,
+                                size = constrained.maxWidth
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.size(8.dp))
+
+                        Box(modifier = Modifier.padding(horizontal = 32.dp)) {
+                            MarqueeText(
+                                text = viewModel.queueTracks[it].name,
+                                style = MaterialTheme.typography.titleMedium.copy(textAlign = TextAlign.Center),
+                                gradientEdgeColor = if (viewModel.playing) MaterialTheme.colorScheme.background else Color.Transparent,
+                                overflow = TextOverflow.Ellipsis,
+                                softWrap = false,
+                                activated = viewModel.playing
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 32.dp)
+                                .align(Alignment.CenterHorizontally)
+                        ) {
+                            MarqueeText(
+                                text = viewModel.queueTracks[it].artistName,
+                                style = MaterialTheme.typography.titleSmall.copy(textAlign = TextAlign.Center),
+                                gradientEdgeColor = if (viewModel.playing) MaterialTheme.colorScheme.background else Color.Transparent,
+                                overflow = TextOverflow.Ellipsis,
+                                softWrap = false,
+                                activated = viewModel.playing
+                            )
+                        }
+                    }
+
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+                Box(modifier = Modifier.padding(horizontal = 32.dp)) {
+
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -126,6 +162,12 @@ fun PlayerScreen(viewModel: MusicPlayerViewModel, popRoute: () -> Unit = {}) {
                             }, style = MaterialTheme.typography.labelMedium
                         )
                     }
+                }
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 32.dp)
+                        .padding(bottom = 32.dp)
+                ) {
 
                     MediaControllers(
                         isPlaying = viewModel.playing,
@@ -134,9 +176,10 @@ fun PlayerScreen(viewModel: MusicPlayerViewModel, popRoute: () -> Unit = {}) {
                         skipNext = viewModel::playNext,
                         skipPrevious = viewModel::playPrevious
                     )
-                    Spacer(modifier = Modifier.weight(1f))
-
                 }
+
+                Spacer(modifier = Modifier.weight(1f))
+
 
             }
 
@@ -192,7 +235,7 @@ fun MediaControllers(
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_skip_previous_24),
                 contentDescription = "Skip previous",
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(42.dp)
             )
         }
         Spacer(modifier = Modifier.size(8.dp))
@@ -200,7 +243,7 @@ fun MediaControllers(
             Icon(
                 painter = painterResource(id = if (isPlaying) R.drawable.ic_baseline_pause_circle_filled_24 else R.drawable.ic_baseline_play_circle_filled_24),
                 contentDescription = "Play",
-                modifier = Modifier.size(60.dp)
+                modifier = Modifier.size(80.dp)
             )
         }
         Spacer(modifier = Modifier.size(8.dp))
@@ -208,7 +251,7 @@ fun MediaControllers(
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_skip_next_24),
                 contentDescription = "Skip next",
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(42.dp)
             )
         }
     }

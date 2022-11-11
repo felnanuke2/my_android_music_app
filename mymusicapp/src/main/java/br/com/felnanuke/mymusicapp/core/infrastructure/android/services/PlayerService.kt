@@ -155,10 +155,6 @@ class PlayerService : Service() {
         private fun playTrack(track: TrackEntity) {
             mediaPlayer?.stop()
             mediaPlayer = MediaPlayer.create(this.application.applicationContext, track.audioUri)
-            mediaPlayer?.setOnPreparedListener {
-                it.start()
-
-            }
             mediaPlayer!!.setOnCompletionListener {
                 if (queueIsEnd()) {
                     mediaPlayer?.seekTo(0)
@@ -169,7 +165,7 @@ class PlayerService : Service() {
 
                 }
             }
-
+            mediaPlayer?.start()
 
         }
 
