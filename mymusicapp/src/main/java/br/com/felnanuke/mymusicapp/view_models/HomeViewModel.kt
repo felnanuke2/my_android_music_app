@@ -13,28 +13,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val trackRepository: TrackRepository, private val playerManager: TrackPlayerManager,
+    private val trackRepository: TrackRepository, val playerManager: TrackPlayerManager,
 ) : ViewModel() {
 
     var loading by mutableStateOf(false)
-    var tracks by mutableStateOf(mutableListOf<TrackEntity>())
+    var tracks by mutableStateOf(listOf<TrackEntity>())
     var currentTrack by mutableStateOf<TrackEntity?>(null)
     val activityEvents = MutableLiveData<Int>()
     var isPlaying by mutableStateOf(playerManager.isPlaying.value!!)
     var trackProgress by mutableStateOf(playerManager.trackProgress.value!!)
-
-
-    init {
-        playerManager.currentTrack.observeForever { track ->
-            currentTrack = track
-        }
-        playerManager.isPlaying.observeForever { isPlaying ->
-            this.isPlaying = isPlaying
-        }
-        playerManager.trackProgress.observeForever { progress ->
-            this.trackProgress = progress
-        }
-    }
+    var queue by mutableStateOf(playerManager.queue.value!!)
 
 
     companion object ActivitiesActions {
@@ -70,6 +58,19 @@ class HomeViewModel @Inject constructor(
 
     fun openExpandedPlayer() {
         activityEvents.value = OPEN_PLAYER_ACTIVITY_ACTION
+    }
+
+    fun getTrackIndex(trackEntity: TrackEntity): Int {
+        val index = queue.indexOf(trackEntity)
+        return if (index < 0) 0 else index
+    }
+
+    fun getTrack(index: Int): TrackEntity {
+        return queue[index]
+    }
+
+    fun setTrack(index: Int) {
+        playerManager.play(queue[index])
     }
 
 

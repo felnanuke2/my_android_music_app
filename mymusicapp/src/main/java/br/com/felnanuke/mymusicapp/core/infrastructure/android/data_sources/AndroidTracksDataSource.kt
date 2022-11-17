@@ -15,9 +15,14 @@ import androidx.core.database.getStringOrNull
 import androidx.documentfile.provider.DocumentFile
 import br.com.felnanuke.mymusicapp.core.domain.data_sources.ITracksDataSource
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.InputStream
+import java.util.concurrent.CountedCompleter
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 class AndroidTracksDataSource(private val context: Context) : ITracksDataSource {
 
@@ -67,7 +72,7 @@ class AndroidTracksDataSource(private val context: Context) : ITracksDataSource 
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idColumnIndex)
                     val name = cursor.getStringOrNull(nameColumnIndex) ?: "undefined"
-                    val artist = cursor.getString(artistColumIndex)
+                    val artist = cursor.getStringOrNull(artistColumIndex) ?: "undefined"
                     val albumId = cursor.getLongOrNull(albumIdColumnIndex)
                     val audioUri = ContentUris.withAppendedId(Audio.Media.EXTERNAL_CONTENT_URI, id)
                     val duration = cursor.getLongOrNull(trackDurationColumnIndex)
@@ -81,7 +86,11 @@ class AndroidTracksDataSource(private val context: Context) : ITracksDataSource 
                         audioUri,
                         albumImage,
                         duration ?: 0,
-                        getAudioByteStream = { this.getAudioBytes(audioUri) },
+                        getAudioByteStream = { uri, completer ->
+                            this.getAudioBytes(
+                                uri, completer
+                            )
+                        },
                     )
                     tracks += track
                 }
@@ -96,8 +105,57 @@ class AndroidTracksDataSource(private val context: Context) : ITracksDataSource 
 
     }
 
-    private fun getAudioBytes(audioUri: Uri): InputStream? {
-        return context.contentResolver.openInputStream(audioUri)
+    override fun getTrack(
+        id: Long, onSuccess: (TrackEntity) -> Unit, onError: (Exception) -> Unit
+    ) {
+        val selection = "${Audio.Media._ID} = ?"
+        val selectionArgs = arrayOf(id.toString())
+        val query =
+            context.contentResolver.query(collection, projection, selection, selectionArgs, null)
+        try {
+            query?.use { cursor ->
+                val nameColumnIndex = cursor.getColumnIndexOrThrow(Audio.Media.DISPLAY_NAME)
+                val artistColumIndex = cursor.getColumnIndexOrThrow(Audio.Media.ARTIST)
+                val albumIdColumnIndex = cursor.getColumnIndexOrThrow(Audio.Media.ALBUM_ID)
+                val trackDurationColumnIndex = cursor.getColumnIndexOrThrow(Audio.Media.DURATION)
+
+                while (cursor.moveToNext()) {
+                    val name = cursor.getStringOrNull(nameColumnIndex) ?: "undefined"
+                    val artist = cursor.getStringOrNull(artistColumIndex) ?: "undefined"
+                    val albumId = cursor.getLongOrNull(albumIdColumnIndex)
+                    val audioUri = ContentUris.withAppendedId(Audio.Media.EXTERNAL_CONTENT_URI, id)
+                    val duration = cursor.getLongOrNull(trackDurationColumnIndex)
+                    val albumImage = if (albumId != null) ContentUris.withAppendedId(
+                        Audio.Albums.EXTERNAL_CONTENT_URI, albumId
+                    ) else null
+                    val track = TrackEntity(
+                        id,
+                        name,
+                        artist,
+                        audioUri,
+                        albumImage,
+                        duration ?: 0,
+                        getAudioByteStream = { uri, completer ->
+                            this.getAudioBytes(
+                                uri, completer
+                            )
+                        },
+                    )
+                    onSuccess(track)
+                }
+            }
+        } catch (e: Exception) {
+            onError(e)
+        }
+
+    }
+
+    private fun getAudioBytes(
+        audioUri: Uri, completer: ((InputStream?) -> Unit)? = null
+    ) {
+        thread {
+            completer?.invoke(context.contentResolver.openInputStream(audioUri))
+        }
     }
 
 

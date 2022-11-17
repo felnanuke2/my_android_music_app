@@ -35,6 +35,7 @@ class HomeActivity : ComponentActivity() {
                 homeViewModel = hiltViewModel()
                 requestPermissions()
                 setupListeners()
+                setupObservers()
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
@@ -45,6 +46,20 @@ class HomeActivity : ComponentActivity() {
         }
     }
 
+    private fun setupObservers() {
+        homeViewModel.playerManager.currentTrack.observe(this) { track ->
+            homeViewModel.currentTrack = track
+        }
+        homeViewModel.playerManager.isPlaying.observe(this) { isPlaying ->
+            homeViewModel.isPlaying = isPlaying
+        }
+        homeViewModel.playerManager.trackProgress.observe(this) { progress ->
+            homeViewModel.trackProgress = progress
+        }
+        homeViewModel.playerManager.queue.observe(this) { queue ->
+            homeViewModel.queue = queue.toMutableList()
+        }
+    }
 
     private fun setupListeners() {
         homeViewModel.activityEvents.observe(this) {
@@ -62,7 +77,6 @@ class HomeActivity : ComponentActivity() {
         shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)
         requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         requestPermissionLauncher.launch(Manifest.permission.READ_MEDIA_AUDIO)
-
         homeViewModel.onStart()
 
     }

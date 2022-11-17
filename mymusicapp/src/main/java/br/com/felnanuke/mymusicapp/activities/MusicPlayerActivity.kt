@@ -1,13 +1,18 @@
 package br.com.felnanuke.mymusicapp.activities
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.Parcelable
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.Navigator
@@ -25,11 +30,14 @@ import dagger.hilt.android.AndroidEntryPoint
 class MusicPlayerActivity : ComponentActivity() {
     private lateinit var musicPlayerViewModel: MusicPlayerViewModel
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContent {
             musicPlayerViewModel = hiltViewModel()
             musicPlayerViewModel.navController = rememberNavController()
+            handleIntent()
             startObservers()
             MyMusicAppTheme {
                 Surface(
@@ -40,7 +48,10 @@ class MusicPlayerActivity : ComponentActivity() {
                         startDestination = "player"
                     ) {
                         composable("player") {
-                            PlayerScreen(musicPlayerViewModel, this@MusicPlayerActivity::finish)
+                            PlayerScreen(
+                                musicPlayerViewModel,
+                                this@MusicPlayerActivity.onBackPressedDispatcher::onBackPressed
+                            )
                         }
                         composable("playlist") {
                             PlaylistScreen(viewModel = musicPlayerViewModel)
@@ -50,6 +61,32 @@ class MusicPlayerActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+
+
+    private fun openHomeActivity() {
+        val intent = Intent(this@MusicPlayerActivity, HomeActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+        startActivity(intent)
+    }
+
+
+    private fun handleIntent() {
+        when (intent.action) {
+            Intent.ACTION_VIEW -> {
+                if (intent.type?.startsWith("audio/") == true) {
+                    if (intent.data != null) {
+                        this.musicPlayerViewModel.startPlayer(intent.data!!)
+                        return@handleIntent
+                    }
+
+                }
+                openHomeActivity()
+
+            }
+        }
+
     }
 
     private fun startObservers() {

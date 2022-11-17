@@ -10,12 +10,37 @@ open class TrackEntity(
     val audioUri: Uri,
     val imageUri: Uri?,
     val duration: Long,
-    val getAudioByteStream: (() -> InputStream?)? = null,
 ) {
+    lateinit var getInputStream: (uri: Uri, completer: (InputStream?) -> Unit) -> Unit
+
+    constructor(
+        id: Long,
+        name: String,
+        artistName: String,
+        audioUri: Uri,
+        imageUri: Uri?,
+        duration: Long,
+        getAudioByteStream: (uri: Uri, completer: (InputStream?) -> Unit) -> Unit = { _, _ -> },
+    ) : this(
+        id,
+        name,
+        artistName,
+        audioUri,
+        imageUri,
+        duration,
+    ) {
+        this.getInputStream = getAudioByteStream
+    }
+
+    fun getAudioByteStream(completer: (InputStream?) -> Unit) {
+        getInputStream(audioUri, completer)
+    }
 
 
     //constructor that receive a bundle and return a TrackEntity
-    constructor(bundle: android.os.Bundle) : this(
+    constructor(
+        bundle: android.os.Bundle
+    ) : this(
         bundle.getLong("id"),
         bundle.getString("name")!!,
         bundle.getString("artistName")!!,

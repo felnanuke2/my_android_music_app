@@ -20,19 +20,28 @@
         tools:targetApi="33">
         <activity
             android:name=".activities.MusicPlayerActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_music_player"
             android:theme="@style/Theme.MyMusicApp">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+
         </activity>
 
         <service
             android:name=".core.infrastructure.android.services.PlayerService"
             android:enabled="true"
-            android:exported="true" />
-w
+            android:exported="false" />
+
         <activity
             android:name=".activities.HomeActivity"
             android:exported="true"

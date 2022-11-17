@@ -45,11 +45,17 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
         }
         if (homeViewModel.currentTrack != null) {
             Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-                PlayerCollapsed(trackEntity = homeViewModel.currentTrack!!,
+                PlayerCollapsed(
+                    currentTrack = homeViewModel.currentTrack!!,
                     playing = homeViewModel.isPlaying,
                     progress = homeViewModel.trackProgress,
                     togglePlay = { homeViewModel.togglePlayPause() },
-                    openExpandedPlayerActivity = { homeViewModel.openExpandedPlayer() })
+                    openExpandedPlayerActivity = homeViewModel::openExpandedPlayer,
+                    getTrack = homeViewModel::getTrack,
+                    getCurrentTrackIndex = { homeViewModel.getTrackIndex(homeViewModel.currentTrack!!) },
+                    queue = homeViewModel.queue,
+                    setTrack = homeViewModel::setTrack
+                )
             }
         }
     }

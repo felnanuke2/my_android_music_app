@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import linc.com.amplituda.Amplituda
+import kotlin.concurrent.thread
 
 class AndroidTrackPlayerServices(
     private val application: Application, private val amplituda: Amplituda
@@ -150,9 +151,9 @@ class AndroidTrackPlayerServices(
     }
 
     private fun loadWaveForm() {
-        CoroutineScope(Dispatchers.IO).launch {
-            currentTrack.value?.getAudioByteStream?.let { getInputStream ->
-                getInputStream()?.let { inputStream ->
+        currentTrack.value?.getAudioByteStream { audioStream ->
+            thread {
+                audioStream?.let { inputStream ->
                     amplituda.processAudio(inputStream).get({ success ->
                         amplitudes.postValue(success.amplitudesAsList())
                     }, { error ->
@@ -160,8 +161,8 @@ class AndroidTrackPlayerServices(
                     })
                 }
             }
-
         }
+
     }
 
 

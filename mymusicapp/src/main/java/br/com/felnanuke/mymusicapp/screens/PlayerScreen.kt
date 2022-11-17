@@ -60,130 +60,132 @@ fun PlayerScreen(viewModel: MusicPlayerViewModel, popRoute: () -> Unit = {}) {
             }
         })
     }) {
-        BoxWithConstraints {
-            val constrained = this
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val pageState = rememberPagerState(viewModel.trackIndex(viewModel.currentTrack))
+       viewModel.currentTrack?.let {
+           BoxWithConstraints {
+               val constrained = this
+               Column(
+                   modifier = Modifier.fillMaxSize(),
+                   horizontalAlignment = Alignment.CenterHorizontally
+               ) {
+                   val pageState = rememberPagerState(viewModel.trackIndex(viewModel.currentTrack))
 
-                LaunchedEffect(key1 = pageState) {
-                    if (pageState.currentPage != viewModel.trackIndex) {
-                        pageState.scrollToPage(viewModel.trackIndex(viewModel.currentTrack))
-                    }
-                    snapshotFlow {
-                        pageState.currentPage
-                    }.collect { page ->
-                        viewModel.setCurrentTrack(page)
-                    }
-                }
+                   LaunchedEffect(key1 = pageState) {
+                       if (pageState.currentPage != viewModel.trackIndex) {
+                           pageState.scrollToPage(viewModel.trackIndex(viewModel.currentTrack))
+                       }
+                       snapshotFlow {
+                           pageState.currentPage
+                       }.collect { page ->
+                           viewModel.setCurrentTrack(page)
+                       }
+                   }
 
-                LaunchedEffect(key1 = viewModel.currentTrack) {
-                    snapshotFlow { viewModel.trackIndex(viewModel.currentTrack) }.collect { index ->
-                        pageState.animateScrollToPage(index)
+                   LaunchedEffect(key1 = viewModel.currentTrack) {
+                       snapshotFlow { viewModel.trackIndex(viewModel.currentTrack) }.collect { index ->
+                           pageState.animateScrollToPage(index)
 
-                    }
-                }
+                       }
+                   }
 
-                HorizontalPager(count = viewModel.queueTracks.count(), state = pageState) {
-                    Column {
-                        Box(modifier = Modifier.padding(horizontal = 32.dp)) {
-                            CdAnimation(
-                                trackEntity = viewModel.queueTracks[it],
-                                viewModel.playing && viewModel.currentTrack == viewModel.queueTracks[it],
-                                padding = 0.dp,
-                                size = constrained.maxWidth
-                            )
-                        }
+                   HorizontalPager(count = viewModel.queueTracks.count(), state = pageState) {
+                       Column {
+                           Box(modifier = Modifier.padding(horizontal = 32.dp)) {
+                               CdAnimation(
+                                   trackEntity = viewModel.queueTracks[it],
+                                   viewModel.playing && viewModel.currentTrack == viewModel.queueTracks[it],
+                                   padding = 0.dp,
+                                   size = constrained.maxWidth
+                               )
+                           }
 
-                        Spacer(modifier = Modifier.size(8.dp))
+                           Spacer(modifier = Modifier.size(8.dp))
 
-                        Box(modifier = Modifier.padding(horizontal = 32.dp)) {
-                            MarqueeText(
-                                text = viewModel.queueTracks[it].name,
-                                style = MaterialTheme.typography.titleMedium.copy(textAlign = TextAlign.Center),
-                                gradientEdgeColor = if (viewModel.playing) MaterialTheme.colorScheme.background else Color.Transparent,
-                                overflow = TextOverflow.Ellipsis,
-                                softWrap = false,
-                                activated = viewModel.playing
-                            )
-                        }
+                           Box(modifier = Modifier.padding(horizontal = 32.dp)) {
+                               MarqueeText(
+                                   text = viewModel.queueTracks[it].name,
+                                   style = MaterialTheme.typography.titleMedium.copy(textAlign = TextAlign.Center),
+                                   gradientEdgeColor = if (viewModel.playing) MaterialTheme.colorScheme.background else Color.Transparent,
+                                   overflow = TextOverflow.Ellipsis,
+                                   softWrap = false,
+                                   activated = viewModel.playing
+                               )
+                           }
 
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = 32.dp)
-                                .align(Alignment.CenterHorizontally)
-                        ) {
-                            MarqueeText(
-                                text = viewModel.queueTracks[it].artistName,
-                                style = MaterialTheme.typography.titleSmall.copy(textAlign = TextAlign.Center),
-                                gradientEdgeColor = if (viewModel.playing) MaterialTheme.colorScheme.background else Color.Transparent,
-                                overflow = TextOverflow.Ellipsis,
-                                softWrap = false,
-                                activated = viewModel.playing
-                            )
-                        }
-                    }
+                           Spacer(modifier = Modifier.size(8.dp))
+                           Box(
+                               modifier = Modifier
+                                   .padding(horizontal = 32.dp)
+                                   .align(Alignment.CenterHorizontally)
+                           ) {
+                               MarqueeText(
+                                   text = viewModel.queueTracks[it].artistName,
+                                   style = MaterialTheme.typography.titleSmall.copy(textAlign = TextAlign.Center),
+                                   gradientEdgeColor = if (viewModel.playing) MaterialTheme.colorScheme.background else Color.Transparent,
+                                   overflow = TextOverflow.Ellipsis,
+                                   softWrap = false,
+                                   activated = viewModel.playing
+                               )
+                           }
+                       }
 
-                }
+                   }
 
-                Spacer(modifier = Modifier.weight(1f))
-                Box(modifier = Modifier.padding(horizontal = 32.dp)) {
-
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = viewModel.trackPositionMillis.let(viewModel::formatMillis),
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .padding(horizontal = 4.dp)
-                        ) {
-                            WaveForm(
-                                viewModel.amplitudes,
-                                viewModel.trackProgress,
-                                onProgressChanged = viewModel::onProgressChanged,
-                                onProgressChangedFinished = viewModel::onProgressFinished
-                            )
-                        }
-                        Text(
-                            text = viewModel.trackDuration.let {
-                                viewModel.formatMillis(it)
-                            }, style = MaterialTheme.typography.labelMedium
-                        )
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 32.dp)
-                        .padding(bottom = 32.dp)
-                ) {
-
-                    MediaControllers(
-                        isPlaying = viewModel.playing,
-                        toggle = viewModel::togglePlay,
-                        canSkipNext = viewModel.canPlayNext,
-                        skipNext = viewModel::playNext,
-                        skipPrevious = viewModel::playPrevious
-                    )
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
+                   Spacer(modifier = Modifier.weight(1f))
+                   Box(modifier = Modifier.padding(horizontal = 32.dp)) {
 
 
-            }
+                       Row(
+                           modifier = Modifier
+                               .fillMaxWidth()
+                               .padding(horizontal = 16.dp),
+                           horizontalArrangement = Arrangement.SpaceBetween,
+                           verticalAlignment = Alignment.CenterVertically
+                       ) {
+                           Text(
+                               text = viewModel.trackPositionMillis.let(viewModel::formatMillis),
+                               style = MaterialTheme.typography.labelMedium
+                           )
+                           Box(
+                               Modifier
+                                   .weight(1f)
+                                   .padding(horizontal = 4.dp)
+                           ) {
+                               WaveForm(
+                                   viewModel.amplitudes,
+                                   viewModel.trackProgress,
+                                   onProgressChanged = viewModel::onProgressChanged,
+                                   onProgressChangedFinished = viewModel::onProgressFinished
+                               )
+                           }
+                           Text(
+                               text = viewModel.trackDuration.let {
+                                   viewModel.formatMillis(it)
+                               }, style = MaterialTheme.typography.labelMedium
+                           )
+                       }
+                   }
+                   Box(
+                       modifier = Modifier
+                           .padding(horizontal = 32.dp)
+                           .padding(bottom = 32.dp)
+                   ) {
 
-        }
+                       MediaControllers(
+                           isPlaying = viewModel.playing,
+                           toggle = viewModel::togglePlay,
+                           canSkipNext = viewModel.canPlayNext,
+                           skipNext = viewModel::playNext,
+                           skipPrevious = viewModel::playPrevious
+                       )
+                   }
+
+                   Spacer(modifier = Modifier.weight(1f))
+
+
+               }
+
+           }
+       }
     }
 
 }

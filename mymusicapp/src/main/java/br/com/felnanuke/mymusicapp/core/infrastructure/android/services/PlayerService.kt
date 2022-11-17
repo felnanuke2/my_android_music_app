@@ -113,7 +113,9 @@ class PlayerService : Service() {
 
         fun addTrackToQueue(track: TrackEntity, play: Boolean = false) {
             val listableTrack = ListableTrackModel(track)
-            queue.value!!.add(listableTrack)
+            queue.value  = queue.value!!.apply {
+                add(listableTrack)
+            }
             if (play) {
                 playTrack(listableTrack)
                 currentTrack.value = listableTrack

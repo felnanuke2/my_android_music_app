@@ -1,5 +1,6 @@
 package br.com.felnanuke.mymusicapp.view_models
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -7,12 +8,15 @@ import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
 import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackPlayerManager
+import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class MusicPlayerViewModel @Inject constructor(val playerManager: TrackPlayerManager) :
-    ViewModel() {
+class MusicPlayerViewModel @Inject constructor(
+    val playerManager: TrackPlayerManager,
+    private val trackRepository: TrackRepository,
+) : ViewModel() {
     var queue: List<TrackEntity> = playerManager.queue.value ?: emptyList()
     var queueTracks by mutableStateOf<List<TrackEntity>>(listOf())
     var loading by mutableStateOf(false)
@@ -89,6 +93,14 @@ class MusicPlayerViewModel @Inject constructor(val playerManager: TrackPlayerMan
 
     fun trackIndex(track: TrackEntity?): Int {
         return queueTracks.indexOf(track)
+    }
+
+    fun startPlayer(uri: Uri) {
+        trackRepository.getTrack(uri, onError = { error ->
+
+        }, onSuccess = { track ->
+            playerManager.startQueue(track)
+        })
     }
 
 

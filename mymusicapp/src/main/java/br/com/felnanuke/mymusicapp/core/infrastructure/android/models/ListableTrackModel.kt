@@ -13,7 +13,7 @@ class ListableTrackModel(
     audioUri: Uri,
     imageUri: Uri?,
     duration: Long,
-    getAudioByteStream: (() -> InputStream?)? = null,
+    getAudioByteStream: (Uri, (InputStream?) -> Unit) -> Unit = { a, b -> },
     private val uuid: UUID
 ) : TrackEntity(id, name, artistName, audioUri, imageUri, duration, getAudioByteStream) {
     constructor(track: TrackEntity) : this(
@@ -23,7 +23,7 @@ class ListableTrackModel(
         track.audioUri,
         track.imageUri,
         track.duration,
-        track.getAudioByteStream,
+        track.getInputStream,
         UUID.randomUUID()
     )
 
