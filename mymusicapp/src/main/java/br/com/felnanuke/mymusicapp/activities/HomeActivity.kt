@@ -27,6 +27,15 @@ class HomeActivity : ComponentActivity() {
 
         }
     }
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+
+        } else {
+
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +85,7 @@ class HomeActivity : ComponentActivity() {
     private fun requestPermissions() {
         shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)
         requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+        requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         requestPermissionLauncher.launch(Manifest.permission.READ_MEDIA_AUDIO)
         homeViewModel.onStart()
 
