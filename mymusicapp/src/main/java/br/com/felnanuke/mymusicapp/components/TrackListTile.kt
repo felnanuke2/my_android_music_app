@@ -72,9 +72,9 @@ fun TrackListTile(
                         contentScale = ContentScale.Crop,
                         filterQuality = FilterQuality.None,
                         fallback = painterResource(R.drawable.ic_baseline_audiotrack_24),
+
                         modifier = Modifier.clip(
                             RoundedCornerShape(8f)
-
                         )
                     )
                 }

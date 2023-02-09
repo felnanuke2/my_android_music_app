@@ -1,14 +1,16 @@
 package br.com.felnanuke.mymusicapp.core.infrastructure.android.services
 
-import android.app.*
+import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Intent
-import android.graphics.ImageDecoder
 import android.media.MediaPlayer
 import android.os.Binder
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
-import android.provider.MediaStore
-import android.provider.MediaStore.Images.Media
+import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -16,11 +18,10 @@ import android.util.Size
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.graphics.decodeBitmap
 import androidx.lifecycle.MutableLiveData
+import androidx.media.MediaBrowserServiceCompat
 import androidx.media.session.MediaButtonReceiver
 import br.com.felnanuke.mymusicapp.R
-import br.com.felnanuke.mymusicapp.activities.HomeActivity
 import br.com.felnanuke.mymusicapp.activities.MusicPlayerActivity
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
 import br.com.felnanuke.mymusicapp.core.infrastructure.android.models.ListableTrackModel
@@ -32,11 +33,12 @@ const val CHANNEL_ID = "mymusicapp_channel_id"
 const val NOTIFICATION_ID = 1
 const val MEDIA_SESSION_TAG = "mymusicapp_media_session"
 
-class PlayerService : Service() {
+class PlayerService : MediaBrowserServiceCompat() {
 
     private lateinit var mediaSession: MediaSessionCompat
 
-    private lateinit var mediaSessionCallBack: MediaNotificationCallBack
+    private val mediaSessionCallBack: MediaNotificationCallBack = MediaNotificationCallBack(this)
+
 
     inner class PlayerServiceBinder : Binder() {
         fun getService(): PlayerService {
@@ -52,8 +54,20 @@ class PlayerService : Service() {
         return binder
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onGetRoot(
+        clientPackageName: String, clientUid: Int, rootHints: Bundle?
+    ): BrowserRoot? {
+        return BrowserRoot("root", null)
+    }
 
+    override fun onLoadChildren(
+        parentId: String, result: Result<MutableList<MediaBrowserCompat.MediaItem>>
+    ) {
+        result.sendResult(null)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -67,17 +81,16 @@ class PlayerService : Service() {
 
     private fun createMediaSessionState() {
         mediaSession = MediaSessionCompat(this, MEDIA_SESSION_TAG)
-        mediaSessionCallBack = MediaNotificationCallBack(this)
-
 
         val stateBuilder = PlaybackStateCompat.Builder()
         stateBuilder.setActions(
-            PlaybackStateCompat.ACTION_SEEK_TO or PlaybackStateCompat.ACTION_PLAY_PAUSE
+            PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_PAUSE
         )
         MediaButtonReceiver.handleIntent(mediaSession, Intent(Intent.ACTION_MEDIA_BUTTON))
         mediaSession.setMediaButtonReceiver(null);
         mediaSession.setPlaybackState(stateBuilder.build())
         mediaSession.setCallback(mediaSessionCallBack)
+
         mediaSession.isActive = true
 
     }
@@ -96,6 +109,14 @@ class PlayerService : Service() {
         val durationMillis = MutableLiveData<Int>(0)
         val queue = MutableLiveData<MutableList<ListableTrackModel>>(mutableListOf())
         private var mediaPlayer: MediaPlayer? = null
+        private val pauseButton = NotificationCompat.Action(
+            android.R.drawable.ic_media_pause,
+            "Pause",
+            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                application, PlaybackStateCompat.ACTION_PAUSE
+            )
+        )
+
 
         private var oldProgress = 0f
 
@@ -161,7 +182,10 @@ class PlayerService : Service() {
 
 
             val contentPendingIntent: PendingIntent = PendingIntent.getActivity(
-                application, 0, Intent(application, MusicPlayerActivity::class.java), 0
+                application,
+                0,
+                Intent(application, MusicPlayerActivity::class.java),
+                PendingIntent.FLAG_IMMUTABLE
             )
             var mediaMetadataBuilder = MediaMetadataCompat.Builder()
                 .putText(MediaMetadataCompat.METADATA_KEY_TITLE, currentTrack.value?.name).putText(
@@ -173,43 +197,45 @@ class PlayerService : Service() {
 
 
             if (currentTrack.value?.imageUri != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val bitmap = application.contentResolver.loadThumbnail(
-                    currentTrack.value!!.imageUri!!, Size(90, 90), null
-                )
+                try {
+                    val bitmap = application.contentResolver.loadThumbnail(
+                        currentTrack.value!!.imageUri!!, Size(90, 90), null
+                    )
 
-                mediaMetadataBuilder = mediaMetadataBuilder.putBitmap(
-                    MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bitmap
-                )
+                    mediaMetadataBuilder = mediaMetadataBuilder.putBitmap(
+                        MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bitmap
+                    )
+                } catch (_: Exception) {
+
+                }
             }
             sessionCompat.setMetadata(
                 mediaMetadataBuilder.build()
 
 
             )
+            val mediaButton = Intent(Intent.ACTION_MEDIA_BUTTON)
+            mediaButton.setClass(this.application, MediaButtonReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                application,
+                0,
+                mediaButton,
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+            sessionCompat.setMediaButtonReceiver(pendingIntent)
 
 
-            val notification = NotificationCompat.Builder(application, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("My Music App")
-                .setContentIntent(contentPendingIntent).addAction(
-                    NotificationCompat.Action(
-                        R.drawable.ic_baseline_pause_circle_filled_24,
-                        "Play",
-                        PendingIntent.getActivity(
-                            application,
-                            0,
-                            Intent(
-                                application,
-                                MediaButtonReceiver::class.java
-                            ).putExtra(Intent.EXTRA_KEY_EVENT, KeyEvent.KEYCODE_MEDIA_PLAY),
-                            0
-                        )
-                    )
-                ).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setStyle(
-                    androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(sessionCompat.sessionToken).setShowActionsInCompactView(1)
-                ).setContentText("Playing ${currentTrack.value?.name}")
+            val notification =
+                NotificationCompat.Builder(application, CHANNEL_ID).addAction(pauseButton)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("My Music App")
+                    .setContentIntent(contentPendingIntent)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setStyle(
+                        androidx.media.app.NotificationCompat.MediaStyle()
+                            .setMediaSession(sessionCompat.sessionToken)
+                            .setShowActionsInCompactView(1)
+                    ).setContentText("Playing ${currentTrack.value?.name}")
 
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT).build()
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT).build()
 
             val notificationManager = NotificationManagerCompat.from(application)
 
@@ -221,7 +247,7 @@ class PlayerService : Service() {
                 )
             }
 
-
+            sessionCompat
 
             notificationManager.notify(NOTIFICATION_ID, notification)
 
@@ -374,7 +400,21 @@ class PlayerService : Service() {
 
     class MediaNotificationCallBack(private val service: PlayerService) :
         MediaSessionCompat.Callback() {
-
+        override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
+            val keyEvent =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    mediaButtonEvent?.getParcelableExtra(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
+                } else {
+                    mediaButtonEvent?.getParcelableExtra(Intent.EXTRA_KEY_EVENT) as KeyEvent?
+                }
+            when(keyEvent?.keyCode){
+                KeyEvent.KEYCODE_MEDIA_PLAY -> onPlay()
+                KeyEvent.KEYCODE_MEDIA_PAUSE -> onPause()
+                KeyEvent.KEYCODE_MEDIA_NEXT -> onSkipToNext()
+                KeyEvent.KEYCODE_MEDIA_PREVIOUS -> onSkipToPrevious()
+            }
+            return super.onMediaButtonEvent(mediaButtonEvent)
+        }
 
         override fun onPlay() {
             service.queueManager?.play()
@@ -409,6 +449,8 @@ class PlayerService : Service() {
         override fun onSeekTo(pos: Long) {
             super.onSeekTo(pos)
         }
+
+
     }
 
 
