@@ -1,5 +1,9 @@
 # 🎵 Vibra - Modern Android Music Player
 
+<div align="center">
+  <img src="mymusicapp/src/main/ic_launcher-playstore.png" alt="Vibra Music Player Icon" width="120" height="120">
+</div>
+
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.7.0-purple.svg)](https://kotlinlang.org)
 [![Android](https://img.shields.io/badge/Android-API%2023+-green.svg)](https://android-arsenal.com/api?level=23)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-1.1.1-blue.svg)](https://developer.android.com/jetpack/compose)
