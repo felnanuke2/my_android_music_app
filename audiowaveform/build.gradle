@@ -4,11 +4,12 @@ plugins {
 }
 
 android {
-    compileSdk 33
+    namespace 'com.linc.audiowaveform'
+    compileSdk 34
 
     defaultConfig {
         minSdk 21
-        targetSdk 33
+        targetSdk 34
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -21,17 +22,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
     buildFeatures {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion compose_version
+        kotlinCompilerExtensionVersion '1.5.4'
     }
     packagingOptions {
         resources {
@@ -41,9 +42,9 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.appcompat:appcompat:1.5.0'
-    compileOnly "androidx.compose.ui:ui:$compose_version"
-    compileOnly "androidx.compose.material:material:$compose_version"
-    compileOnly "androidx.compose.ui:ui-tooling-preview:$compose_version"
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    compileOnly "androidx.compose.ui:ui:1.5.4"
+    compileOnly "androidx.compose.material:material:1.5.4"
+    compileOnly "androidx.compose.ui:ui-tooling-preview:1.5.4"
 }

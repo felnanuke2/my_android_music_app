@@ -59,12 +59,14 @@ fun PlayerScreen(viewModel: MusicPlayerViewModel, popRoute: () -> Unit = {}) {
                 )
             }
         })
-    }) {
+    }) { paddingValues ->
        viewModel.currentTrack?.let {
            BoxWithConstraints {
                val constrained = this
                Column(
-                   modifier = Modifier.fillMaxSize(),
+                   modifier = Modifier
+                       .fillMaxSize()
+                       .padding(paddingValues),
                    horizontalAlignment = Alignment.CenterHorizontally
                ) {
                    val pageState = rememberPagerState(viewModel.trackIndex(viewModel.currentTrack))

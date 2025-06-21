@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">MyMusicApp</string>
+    <string name="app_name">Vibra</string>
     <string name="title_activity_music_player">MusicPlayerActivity</string>
 </resources>

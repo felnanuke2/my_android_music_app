@@ -4,8 +4,6 @@ import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -35,20 +33,35 @@ fun PlayerCollapsed(
     queue: List<TrackEntity> = listOf(),
     getTrack: ((Int) -> TrackEntity)? = null,
     setTrack: ((Int) -> Unit)? = null,
+    currentTime: Long = 0, // Current playing time in milliseconds
+    duration: Long = 0L, // Total duration in milliseconds
 ) {
-    Card(
-        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(0.dp),
-        modifier = Modifier.padding(0.dp).clickable { openExpandedPlayerActivity() }
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { openExpandedPlayerActivity() },
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 2.dp
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(4.dp)
+                .padding(16.dp)
         ) {
-            Row {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
                 CdAnimation(
-                    trackEntity = currentTrack, playing = playing, size = 50.dp, padding = 0.dp,
+                    trackEntity = currentTrack, 
+                    playing = playing, 
+                    size = 56.dp, 
+                    padding = 0.dp,
                 )
 
                 val pageState = rememberPagerState(getCurrentTrackIndex.invoke())
@@ -75,60 +88,85 @@ fun PlayerCollapsed(
                     count = queue.count(),
                     state = pageState,
                     modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp)
+                        .padding(horizontal = 16.dp)
                         .weight(1f)
                 ) { page ->
                     getTrack?.invoke(page)?.let { track ->
                         val isPlaying = track == currentTrack && playing
-                        Column {
+                        Column(
+                            verticalArrangement = Arrangement.Center
+                        ) {
                             MarqueeText(
                                 text = track.name,
-                                style = MaterialTheme.typography.titleSmall,
+                                style = MaterialTheme.typography.bodyLarge,
                                 activated = isPlaying,
-                                gradientEdgeColor = if (isPlaying) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-
+                                gradientEdgeColor = if (isPlaying) 
+                                    MaterialTheme.colorScheme.primaryContainer else
+                                    Color.Transparent
                             )
                             Text(
                                 text = track.artistName,
-                                style = TextStyle(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.ExtraLight,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-
                 }
 
-                /// icon button to toggle play or pause
-                IconButton(onClick = { togglePlay() }) {
+                // Play/Pause button
+                FilledIconButton(
+                    onClick = { togglePlay() },
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
                     Icon(
-                        painter = painterResource(id = if (playing) R.drawable.ic_baseline_pause_circle_outline_24 else R.drawable.ic_baseline_play_circle_outline_24),
-                        contentDescription = null,
-                        modifier = Modifier.size(42.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-
+                        painter = painterResource(
+                            id = if (playing) 
+                                R.drawable.ic_baseline_pause_circle_outline_24 
+                            else 
+                                R.drawable.ic_baseline_play_circle_outline_24
+                        ),
+                        contentDescription = if (playing) "Pause" else "Play",
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
 
             }
-            Box(modifier = Modifier.padding(vertical = 4.dp, horizontal = 0.dp)) {
-
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Progress bar and time display
+            Column {
                 LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth(),
                     progress = progress,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = formatTime(currentTime),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Text(
+                        text = formatTime(duration),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
-
-
     }
-
-
 }
 
 @Preview
@@ -138,7 +176,11 @@ fun PlayerCollapsedPreview() {
         TrackEntity(
             0, "Track 2", "Artist 2", Uri.parse(""), Uri.parse(""), 23
         ),
-        playing = true, progress = 0.5f, togglePlay = {}, openExpandedPlayerActivity = {},
+        playing = true, 
+        progress = 0.5f, 
+        togglePlay = {}, 
+        openExpandedPlayerActivity = {},
+        currentTime = 90000L, // 1:30
+        duration = 180000L, // 3:00
     )
-
 }

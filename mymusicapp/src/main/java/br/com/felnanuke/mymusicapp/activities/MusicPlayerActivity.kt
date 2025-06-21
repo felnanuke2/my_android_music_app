@@ -28,17 +28,17 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MusicPlayerActivity : ComponentActivity() {
-    private lateinit var musicPlayerViewModel: MusicPlayerViewModel
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         setContent {
-            musicPlayerViewModel = hiltViewModel()
+            val musicPlayerViewModel: MusicPlayerViewModel = hiltViewModel()
             musicPlayerViewModel.navController = rememberNavController()
-            handleIntent()
-            startObservers()
+            
+            // Handle intent and start observers after ViewModel is initialized
+            handleIntent(musicPlayerViewModel)
+            startObservers(musicPlayerViewModel)
+            
             MyMusicAppTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
@@ -72,12 +72,12 @@ class MusicPlayerActivity : ComponentActivity() {
     }
 
 
-    private fun handleIntent() {
+    private fun handleIntent(musicPlayerViewModel: MusicPlayerViewModel) {
         when (intent.action) {
             Intent.ACTION_VIEW -> {
                 if (intent.type?.startsWith("audio/") == true) {
                     if (intent.data != null) {
-                        this.musicPlayerViewModel.startPlayer(intent.data!!)
+                        musicPlayerViewModel.startPlayer(intent.data!!)
                         return@handleIntent
                     }
 
@@ -89,12 +89,11 @@ class MusicPlayerActivity : ComponentActivity() {
 
     }
 
-    private fun startObservers() {
+    private fun startObservers(musicPlayerViewModel: MusicPlayerViewModel) {
         musicPlayerViewModel.playerManager.trackProgress.observe(this) { progress ->
-            musicPlayerViewModel.trackProgress = progress ?: 0f
         }
         musicPlayerViewModel.playerManager.isPlaying.observe(this) { isPlaying ->
-            musicPlayerViewModel.playing = isPlaying ?: false
+           musicPlayerViewModel.playing = isPlaying ?: false
         }
         musicPlayerViewModel.playerManager.currentTrack.observe(this) { track ->
             musicPlayerViewModel.currentTrack = track

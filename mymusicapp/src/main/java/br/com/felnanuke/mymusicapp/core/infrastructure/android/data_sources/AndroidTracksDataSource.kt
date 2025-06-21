@@ -34,17 +34,16 @@ class AndroidTracksDataSource(private val context: Context) : ITracksDataSource 
         Audio.Media.DISPLAY_NAME,
         Audio.Media.ALBUM_ID,
         Audio.Media.ARTIST,
-        Audio.Media.DURATION
+        Audio.Media.DURATION,
+        Audio.Media.MIME_TYPE
     )
 
-    private val selection = "${Audio.Media.IS_MUSIC} != 0"
+    private val selection = "${Audio.Media.IS_MUSIC} = 1 AND ${Audio.Media.DURATION} > ? AND ${Audio.Media.MIME_TYPE} LIKE 'audio/%' AND ${Audio.Media.MIME_TYPE} NOT LIKE '%ringtone%' AND ${Audio.Media.MIME_TYPE} NOT LIKE '%notification%' AND ${Audio.Media.MIME_TYPE} NOT LIKE '%alarm%'"
 
 
     private var bundle = Bundle()
     private val selectionArgs = arrayOf(
-        TimeUnit.MILLISECONDS.convert(30, TimeUnit.SECONDS).toString()
-
-
+        TimeUnit.MILLISECONDS.convert(30, TimeUnit.SECONDS).toString() // Increased to 30 seconds minimum
     )
 
     private val sortOrder = "${Audio.Media.DATE_MODIFIED} DESC"
@@ -52,23 +51,58 @@ class AndroidTracksDataSource(private val context: Context) : ITracksDataSource 
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun getTracks(onSuccess: (Array<TrackEntity>) -> Unit, onError: () -> Unit) {
-        contentResolver.refresh(Audio.Media.EXTERNAL_CONTENT_URI, null, null)
-        bundle.clear()
-        var tracks = arrayOf<TrackEntity>()
-        bundle.putInt(ContentResolver.QUERY_ARG_LIMIT, 999)
-//        bundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
-//        query.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, selectionArgs)
-        bundle.putString(ContentResolver.QUERY_ARG_SQL_SORT_ORDER, sortOrder)
-
-        val query = context.contentResolver.query(collection, projection, bundle, null)
         try {
-            query?.use { cursor ->
+            contentResolver.refresh(Audio.Media.EXTERNAL_CONTENT_URI, null, null)
+            bundle.clear()
+            var tracks = arrayOf<TrackEntity>()
+            bundle.putInt(ContentResolver.QUERY_ARG_LIMIT, 999)
+            bundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+            bundle.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, selectionArgs)
+            bundle.putString(ContentResolver.QUERY_ARG_SQL_SORT_ORDER, sortOrder)
+
+            println("AndroidTracksDataSource: Attempting to query with bundle API...")
+            var query = context.contentResolver.query(collection, projection, bundle, null)
+            
+            // Fallback to old API if bundle API fails
+            if (query == null) {
+                println("AndroidTracksDataSource: Bundle API failed, trying legacy API...")
+                query = context.contentResolver.query(
+                    collection, 
+                    projection, 
+                    selection, 
+                    selectionArgs, 
+                    sortOrder
+                )
+            }
+            
+            // Last resort - try without any filters
+            if (query == null) {
+                println("AndroidTracksDataSource: Legacy API failed, trying without filters...")
+                query = context.contentResolver.query(
+                    collection, 
+                    projection, 
+                    null, 
+                    null, 
+                    sortOrder
+                )
+            }
+            
+            if (query == null) {
+                println("AndroidTracksDataSource: All query methods failed")
+                onError()
+                return
+            }
+
+            query.use { cursor ->
                 val nameColumnIndex = cursor.getColumnIndexOrThrow(Audio.Media.DISPLAY_NAME)
                 val idColumnIndex = cursor.getColumnIndexOrThrow(Audio.Media._ID)
                 val artistColumIndex = cursor.getColumnIndexOrThrow(Audio.Media.ARTIST)
                 val albumIdColumnIndex = cursor.getColumnIndexOrThrow(Audio.Media.ALBUM_ID)
                 val trackDurationColumnIndex = cursor.getColumnIndexOrThrow(Audio.Media.DURATION)
+                val mimeTypeColumnIndex = cursor.getColumnIndexOrThrow(Audio.Media.MIME_TYPE)
 
+                println("AndroidTracksDataSource: Found ${cursor.count} media files")
+                
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idColumnIndex)
                     val name = cursor.getStringOrNull(nameColumnIndex) ?: "undefined"
@@ -76,33 +110,54 @@ class AndroidTracksDataSource(private val context: Context) : ITracksDataSource 
                     val albumId = cursor.getLongOrNull(albumIdColumnIndex)
                     val audioUri = ContentUris.withAppendedId(Audio.Media.EXTERNAL_CONTENT_URI, id)
                     val duration = cursor.getLongOrNull(trackDurationColumnIndex)
-                    val albumImage = if (albumId != null) ContentUris.withAppendedId(
-                        Audio.Albums.EXTERNAL_CONTENT_URI, albumId
-                    ) else null
-                    val track = TrackEntity(
-                        id,
-                        name,
-                        artist,
-                        audioUri,
-                        albumImage,
-                        duration ?: 0,
-                        getAudioByteStream = { uri, completer ->
-                            this.getAudioBytes(
-                                uri, completer
-                            )
-                        },
-                    )
-                    tracks += track
+                    val mimeType = cursor.getStringOrNull(mimeTypeColumnIndex)
+                    
+                    // Additional filtering for music files only
+                    val isMusicFile = mimeType?.let { mime ->
+                        mime.startsWith("audio/") && 
+                        !mime.contains("ringtone", ignoreCase = true) &&
+                        !mime.contains("notification", ignoreCase = true) &&
+                        !mime.contains("alarm", ignoreCase = true) &&
+                        !name.contains("ringtone", ignoreCase = true) &&
+                        !name.contains("notification", ignoreCase = true) &&
+                        !name.contains("alarm", ignoreCase = true) &&
+                        !name.startsWith("AUD-", ignoreCase = true) &&
+                        duration != null && duration >= 90000 // 90 seconds minimum duration
+                    } ?: false
+                    
+                    // Only add tracks that are valid music files
+                    if (isMusicFile && duration != null && duration > 0) {
+                        val albumImage = if (albumId != null) ContentUris.withAppendedId(
+                            Audio.Albums.EXTERNAL_CONTENT_URI, albumId
+                        ) else null
+                        val track = TrackEntity(
+                            id,
+                            name,
+                            artist,
+                            audioUri,
+                            albumImage,
+                            duration,
+                            getAudioByteStream = { uri, completer ->
+                                this.getAudioBytes(
+                                    uri, completer
+                                )
+                            },
+                        )
+                        tracks += track
+                        println("AndroidTracksDataSource: Added track: $name by $artist (${duration}ms) - $mimeType")
+                    } else {
+                        println("AndroidTracksDataSource: Skipped file $name - not a music file or invalid duration: $duration, mimeType: $mimeType")
+                    }
                 }
 
-
+                println("AndroidTracksDataSource: Total valid tracks found: ${tracks.size}")
                 onSuccess(tracks)
             }
         } catch (e: Exception) {
+            println("AndroidTracksDataSource: Error loading tracks: ${e.message}")
+            e.printStackTrace()
             onError()
         }
-
-
     }
 
     override fun getTrack(

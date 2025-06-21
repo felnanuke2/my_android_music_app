@@ -9,9 +9,13 @@ class TrackPlayerManager(private val trackPlayerServices: ITrackPlayerServices) 
     val currentTrack: MutableLiveData<TrackEntity?>
         get() = trackPlayerServices.currentTrack
     val isPlaying: MutableLiveData<Boolean>
-        get() = trackPlayerServices.isPlaying
+        get() {
+          return   trackPlayerServices.isPlaying
+        }
     val canPlayNext: MutableLiveData<Boolean>
-        get() = trackPlayerServices.canPlayNext
+        get() {
+            return trackPlayerServices.canPlayNext
+        }
     val canPlayPrevious: MutableLiveData<Boolean>
         get() = trackPlayerServices.canPlayPrevious
     val trackProgress: MutableLiveData<Float>

@@ -18,23 +18,23 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class HomeActivity : ComponentActivity() {
     private lateinit var homeViewModel: HomeViewModel
+    private var permissionsGranted = 0
+    private val totalPermissions = 3
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            homeViewModel.onStart()
-        } else {
-
+            permissionsGranted++
         }
+        checkAllPermissionsGranted()
     }
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
 
-        } else {
-
-        }
+    private val requestMultiplePermissionsLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        permissionsGranted = permissions.values.count { it }
+        checkAllPermissionsGranted()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +45,8 @@ class HomeActivity : ComponentActivity() {
                 requestPermissions()
                 setupListeners()
                 setupObservers()
+                // Check permissions status after ViewModel is initialized
+                checkAllPermissionsGranted()
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
@@ -77,18 +79,33 @@ class HomeActivity : ComponentActivity() {
                     val intent = Intent(this, MusicPlayerActivity::class.java)
                     startActivity(intent)
                 }
+                HomeViewModel.REQUEST_PERMISSIONS_ACTION -> {
+                    requestPermissions()
+                }
             }
         }
     }
 
+    private fun checkAllPermissionsGranted() {
+        val requiredPermissions = arrayOf(
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.READ_MEDIA_AUDIO
+        )
+        permissionsGranted = requiredPermissions.count { permission ->
+            checkSelfPermission(permission) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        //at least one permission is required
+        val hasRequiredPermissions = permissionsGranted >= 1
+        homeViewModel.updatePermissionStatus(hasRequiredPermissions)
+    }
 
     private fun requestPermissions() {
-        shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)
-        requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-        requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        requestPermissionLauncher.launch(Manifest.permission.READ_MEDIA_AUDIO)
-        homeViewModel.onStart()
-
+        val permissions = arrayOf(
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.READ_MEDIA_AUDIO
+        )
+        requestMultiplePermissionsLauncher.launch(permissions)
     }
 
 
