@@ -19,6 +19,25 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
+    - name: Install CMake
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+        
+    - name: Install Android NDK
+      run: |
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;21.1.6352462"
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "cmake;3.22.1"
+        
+    - name: Set NDK and CMake environment variables
+      run: |
+        echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/21.1.6352462" >> $GITHUB_ENV
+        echo "CMAKE_HOME=$ANDROID_HOME/cmake/3.22.1" >> $GITHUB_ENV
+        echo "PATH=$ANDROID_HOME/cmake/3.22.1/bin:$PATH" >> $GITHUB_ENV
+        
     - name: Cache Gradle packages
       uses: actions/cache@v3
       with:
@@ -31,6 +50,14 @@ jobs:
           
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
+      
+    - name: Verify CMake installation
+      run: |
+        echo "Checking CMake availability:"
+        which cmake || echo "CMake not found in PATH"
+        ls -la $ANDROID_HOME/cmake/ || echo "CMake not found in Android SDK"
+        echo "NDK location:"
+        ls -la $ANDROID_HOME/ndk/ || echo "NDK not found"
       
     - name: Build release APK
       run: ./gradlew assembleRelease
