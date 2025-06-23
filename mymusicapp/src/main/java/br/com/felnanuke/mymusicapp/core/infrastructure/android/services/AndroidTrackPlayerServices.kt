@@ -7,16 +7,16 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import androidx.lifecycle.MutableLiveData
+import br.com.felnanuke.mymusicapp.core.domain.data_sources.IAudioWaveformProcessor
 import br.com.felnanuke.mymusicapp.core.domain.data_sources.ITrackPlayerServices
 import br.com.felnanuke.mymusicapp.core.domain.entities.TrackEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import linc.com.amplituda.Amplituda
 import kotlin.concurrent.thread
 
 class AndroidTrackPlayerServices(
-    private val application: Application, private val amplituda: Amplituda
+    private val application: Application, private val audioWaveformProcessor: IAudioWaveformProcessor
 ) : ITrackPlayerServices, ServiceConnection {
 
     init {
@@ -50,18 +50,20 @@ class AndroidTrackPlayerServices(
 
 
     override fun playNext() {
-        if (canPlayNext.value!!) {
+        if (canPlayNext.value == true) {
             queueManager?.nextTrack()
         }
     }
 
     override fun playPrevious() {
-        if (trackProgress.value!! > 0.1f || !canPlayPrevious.value!!) {
+        val progress = trackProgress.value
+        val canPrevious = canPlayPrevious.value
+        
+        if (progress == null || progress > 0.1f || canPrevious != true) {
             queueManager?.seekTo(0)
         } else {
             queueManager?.previousTrack()
         }
-
     }
 
     override fun addToQueue(track: TrackEntity, playNow: Boolean) {
@@ -150,19 +152,33 @@ class AndroidTrackPlayerServices(
         queueManager?.reorderQueue(from, to)
     }
 
+    /**
+     * Initializes the player service connection if not already connected.
+     * This method allows manual re-initialization of the service connection if needed.
+     */
+    fun initialize() {
+        if (playerService == null) {
+            val playerServiceIntent = Intent(application, PlayerService::class.java)
+            application.bindService(playerServiceIntent, this, Context.BIND_AUTO_CREATE)
+        }
+    }
+
     private fun loadWaveForm() {
         currentTrack.value?.getAudioByteStream { audioStream ->
             thread {
                 audioStream?.let { inputStream ->
-                    amplituda.processAudio(inputStream).get({ success ->
-                        amplitudes.postValue(success.amplitudesAsList())
-                    }, { error ->
-                        error.printStackTrace()
-                    })
+                    audioWaveformProcessor.processAudio(
+                        inputStream = inputStream,
+                        onSuccess = { amplitudesList ->
+                            amplitudes.postValue(amplitudesList)
+                        },
+                        onError = { error ->
+                            error.printStackTrace()
+                        }
+                    )
                 }
             }
         }
-
     }
 
 

@@ -1,8 +1,10 @@
 package br.com.felnanuke.mymusicapp.di
 
 import android.app.Application
+import br.com.felnanuke.mymusicapp.core.domain.data_sources.IAudioWaveformProcessor
 import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackPlayerManager
 import br.com.felnanuke.mymusicapp.core.domain.repositories.TrackRepository
+import br.com.felnanuke.mymusicapp.core.infrastructure.android.audio.AmplitudaAudioWaveformProcessor
 import br.com.felnanuke.mymusicapp.core.infrastructure.android.data_sources.AndroidTracksDataSource
 import br.com.felnanuke.mymusicapp.core.infrastructure.android.services.AndroidTrackPlayerServices
 import dagger.Module
@@ -38,10 +40,15 @@ object AppModule {
     @Provides
     @Singleton
     fun provideTrackPlayerServices(
-        application: Application, amplituda: Amplituda
+        application: Application, audioWaveformProcessor: IAudioWaveformProcessor
     ): AndroidTrackPlayerServices {
-        return AndroidTrackPlayerServices(application, amplituda)
+        return AndroidTrackPlayerServices(application, audioWaveformProcessor)
+    }
 
+    @Provides
+    @Singleton
+    fun provideAudioWaveformProcessor(amplituda: Amplituda): IAudioWaveformProcessor {
+        return AmplitudaAudioWaveformProcessor(amplituda)
     }
 
     @Provides
