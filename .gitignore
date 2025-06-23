@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Keystore and signing files
+*.jks
+*.keystore
+key.properties
+mymusicapp-release-key.jks

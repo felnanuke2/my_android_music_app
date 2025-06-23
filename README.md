@@ -4,10 +4,15 @@
   <img src="mymusicapp/src/main/ic_launcher-playstore.png" alt="Vibra Music Player Icon" width="120" height="120">
 </div>
 
+[![Android CI](https://github.com/felnanuke2/vibra_app/workflows/Android%20CI/badge.svg)](https://github.com/felnanuke2/vibra_app/actions)
+[![codecov](https://codecov.io/gh/felnanuke2/vibra_app/branch/main/graph/badge.svg)](https://codecov.io/gh/felnanuke2/vibra_app)
+[![Test Coverage](https://github.com/felnanuke2/vibra_app/workflows/Test%20Coverage/badge.svg)](https://github.com/felnanuke2/vibra_app/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.7.0-purple.svg)](https://kotlinlang.org)
 [![Android](https://img.shields.io/badge/Android-API%2023+-green.svg)](https://android-arsenal.com/api?level=23)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-1.1.1-blue.svg)](https://developer.android.com/jetpack/compose)
 [![Architecture](https://img.shields.io/badge/Architecture-MVVM%20%2B%20Clean-orange.svg)](https://developer.android.com/jetpack/guide)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=felnanuke2_vibra_app&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=felnanuke2_vibra_app)
 
 A feature-rich, modern Android music player built with cutting-edge technologies and following industry best practices. This project demonstrates advanced Android development skills including Clean Architecture, MVVM pattern, Jetpack Compose, and audio visualization.
 
@@ -112,11 +117,45 @@ A feature-rich, modern Android music player built with cutting-edge technologies
 - **Responsive design** adapting to different screen orientations
 - **Accessibility support** following Android guidelines
 
+### **CI/CD & Quality Assurance**
+- **Automated testing** with comprehensive unit and integration tests
+- **Test coverage reporting** with JaCoCo and Codecov integration
+- **Continuous Integration** using GitHub Actions for automated builds
+- **Code quality analysis** with static analysis tools
+- **Automated APK generation** for releases
+- **Dependency vulnerability scanning**
+
+## 🧪 Testing & Coverage
+
+This project maintains high code quality with comprehensive testing:
+
+- **Unit Tests**: Core business logic and utilities
+- **Integration Tests**: Service and repository layer testing
+- **Instrumented Tests**: Android-specific component testing
+- **Test Coverage**: Automated coverage reporting with badges
+- **Quality Gates**: Automated checks for code quality and coverage thresholds
+
+### Running Tests Locally
+
+```bash
+# Run all tests with coverage
+./scripts/run_tests.sh
+
+# Run unit tests only
+./gradlew testDebugUnitTest
+
+# Run instrumented tests
+./gradlew connectedAndroidTest
+
+# Generate coverage report
+./gradlew jacocoTestReport
+```
+
 ## 🔧 Installation & Setup
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/my_android_music_app.git
+   git clone https://github.com/felnanuke2/vibra_app.git
    ```
 
 2. **Open in Android Studio**
@@ -133,6 +172,54 @@ A feature-rich, modern Android music player built with cutting-edge technologies
 - `READ_MEDIA_AUDIO` - Android 13+ audio file access
 - `INTERNET` - For potential online features
 - `POST_NOTIFICATIONS` - Media playback notifications
+
+## 🚀 CI/CD & Quality Assurance
+
+### Continuous Integration
+Our CI pipeline ensures code quality and reliability:
+
+- **🔄 Automated Testing**: Unit tests run on every push and PR
+- **📊 Test Coverage**: JaCoCo generates detailed coverage reports  
+- **🔍 Code Quality**: Lint checks and static analysis
+- **📱 Build Verification**: Debug and release APK generation
+- **🔒 Security Scanning**: Dependency vulnerability checks
+
+### Code Coverage
+[![codecov](https://codecov.io/gh/YOUR_USERNAME/my_android_music_app/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/my_android_music_app)
+
+Current test coverage metrics:
+- **Overall Coverage**: Maintained above 40%
+- **New Code Coverage**: Target of 60% for new changes
+- **Coverage Reports**: Available in PR comments
+- **Trending**: Coverage trend tracking over time
+
+### Testing Strategy
+```kotlin
+// Example test structure
+@Test
+fun `playNext should call nextTrack when canPlayNext is true`() {
+    // Given
+    every { canPlayNext.value } returns true
+    
+    // When
+    trackPlayerServices.playNext()
+    
+    // Then
+    verify { queueManager.nextTrack() }
+}
+```
+
+### Running Tests Locally
+```bash
+# Run unit tests
+./gradlew testDebugUnitTest
+
+# Generate coverage report
+./gradlew jacocoTestReport
+
+# View coverage report
+open mymusicapp/build/reports/jacoco/jacocoTestReport/html/index.html
+```
 
 ## 🎯 Professional Development Showcase
 

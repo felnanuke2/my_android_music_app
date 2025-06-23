@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'com.google.devtools.ksp'
     id 'dagger.hilt.android.plugin'
-
+    id 'jacoco'
 }
 
 
@@ -28,6 +28,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            testCoverageEnabled true
         }
     }
     compileOptions {
@@ -56,8 +59,75 @@ android {
                 useJUnitPlatform()
             }
         }
+        unitTests.all {
+            jacoco {
+                includeNoLocationClasses = true
+                excludes = ['jdk.internal.*']
+            }
+        }
     }
 
+}
+
+// JaCoCo configuration for test coverage
+jacoco {
+    toolVersion = "0.8.8"
+}
+
+tasks.register('jacocoTestReport', JacocoReport) {
+    dependsOn 'testDebugUnitTest'
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports after running tests."
+    
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+
+    def fileFilter = [
+        '**/R.class',
+        '**/R$*.class',
+        '**/BuildConfig.*',
+        '**/Manifest*.*',
+        '**/*Test*.*',
+        'android/**/*.*',
+        '**/*$WhenMappings.*',
+        '**/*$*$*.*', // Anonymous classes
+        '**/*Module.*', // Hilt modules
+        '**/*_HiltModules*.*',
+        '**/*_Factory*.*',
+        '**/*_MembersInjector*.*',
+        '**/Hilt_*.*',
+        '**/*Component*.*',
+        '**/*_Impl*.*',
+        '**/*Application*.*',
+        '**/di/**/*.*'
+    ]
+    
+    def debugTree = fileTree(dir: "${project.buildDir}/intermediates/javac/debug/classes", excludes: fileFilter)
+    def kotlinDebugTree = fileTree(dir: "${project.buildDir}/tmp/kotlin-classes/debug", excludes: fileFilter)
+    
+    classDirectories.setFrom(files([debugTree, kotlinDebugTree]))
+    
+    sourceDirectories.setFrom(files([
+        "${project.projectDir}/src/main/java",
+        "${project.projectDir}/src/main/kotlin"
+    ]))
+    
+    executionData.setFrom(fileTree(dir: project.buildDir, includes: [
+        'jacoco/testDebugUnitTest.exec',
+        'outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec'
+    ]))
+}
+
+// Generate coverage reports after tests
+afterEvaluate {
+    tasks.whenTaskAdded { task ->
+        if (task.name == 'testDebugUnitTest') {
+            task.finalizedBy 'jacocoTestReport'
+        }
+    }
 }
 
 // Clean generated files before each build to prevent virtual class issues
