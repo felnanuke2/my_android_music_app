@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.os.Binder
 import android.os.Build
@@ -18,6 +19,7 @@ import android.util.Size
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.session.MediaButtonReceiver
@@ -249,7 +251,19 @@ class PlayerService : MediaBrowserServiceCompat() {
 
             sessionCompat
 
-            notificationManager.notify(NOTIFICATION_ID, notification)
+            // Check for notification permission on Android 13+ (API 33+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(
+                        application,
+                        android.Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    notificationManager.notify(NOTIFICATION_ID, notification)
+                }
+            } else {
+                // For Android 12 and below, permission is automatically granted
+                notificationManager.notify(NOTIFICATION_ID, notification)
+            }
 
         }
 

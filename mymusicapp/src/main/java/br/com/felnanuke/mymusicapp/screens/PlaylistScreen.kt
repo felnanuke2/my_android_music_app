@@ -45,8 +45,8 @@ fun PlaylistScreen(viewModel: MusicPlayerViewModel) {
         },
 
 
-        ) {
-        Box(Modifier.padding(16.dp)) {
+        ) { contentPadding ->
+        Box(Modifier.padding(contentPadding).padding(16.dp)) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier

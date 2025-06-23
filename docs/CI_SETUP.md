@@ -44,6 +44,25 @@ Your Vibra Android Music Player project now has a comprehensive CI/CD pipeline w
 - `applj/build.gradle`
 - `amplitudaapp/build.gradle`
 
+### Lint Issues ✅ FIXED
+**Problems**: 
+1. Missing permission check for POST_NOTIFICATIONS in PlayerService
+2. Unused scaffold padding parameter in PlaylistScreen
+
+**Solutions Applied**:
+1. **Notification Permission Fix**: Added proper permission checking for Android 13+ (API 33+) in `PlayerService.kt`
+   - Added import for `PackageManager` and `ContextCompat`
+   - Implemented runtime permission check for `POST_NOTIFICATIONS` before posting notifications
+   - Graceful fallback for Android 12 and below where permission is automatically granted
+
+2. **Scaffold Padding Fix**: Fixed unused Material3 scaffold padding parameter in `PlaylistScreen.kt`
+   - Updated content lambda to accept and use the `contentPadding` parameter
+   - Prevents content from being obscured by app bars
+
+**Files Updated**:
+- `mymusicapp/src/main/java/br/com/felnanuke/mymusicapp/core/infrastructure/android/services/PlayerService.kt`
+- `mymusicapp/src/main/java/br/com/felnanuke/mymusicapp/screens/PlaylistScreen.kt`
+
 ### CI Workflow Improvements ✅ ENHANCED
 1. **Added CMake Installation**: Proper setup of CMake 3.22.1 and NDK 21.1.6352462
 2. **Build Matrix**: Test across multiple Android API levels
