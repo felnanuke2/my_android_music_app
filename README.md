@@ -6,13 +6,11 @@
 
 [![Android CI](https://github.com/felnanuke2/vibra_app/workflows/Android%20CI/badge.svg)](https://github.com/felnanuke2/vibra_app/actions)
 [![codecov](https://codecov.io/gh/felnanuke2/vibra_app/branch/main/graph/badge.svg)](https://codecov.io/gh/felnanuke2/vibra_app)
-[![Test Coverage](https://github.com/felnanuke2/vibra_app/workflows/Test%20Coverage/badge.svg)](https://github.com/felnanuke2/vibra_app/actions)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.7.0-purple.svg)](https://kotlinlang.org)
 [![Android](https://img.shields.io/badge/Android-API%2023+-green.svg)](https://android-arsenal.com/api?level=23)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-1.1.1-blue.svg)](https://developer.android.com/jetpack/compose)
 [![Architecture](https://img.shields.io/badge/Architecture-MVVM%20%2B%20Clean-orange.svg)](https://developer.android.com/jetpack/guide)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=felnanuke2_vibra_app&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=felnanuke2_vibra_app)
 
 A feature-rich, modern Android music player built with cutting-edge technologies and following industry best practices. This project demonstrates advanced Android development skills including Clean Architecture, MVVM pattern, Jetpack Compose, and audio visualization.
 

@@ -77,12 +77,9 @@ jobs:
       run: ./gradlew jacocoTestReport
       
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
-        file: ./mymusicapp/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
         
     - name: Comment coverage on PR
       if: github.event_name == 'pull_request'
