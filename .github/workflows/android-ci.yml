@@ -9,10 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        api-level: [23, 29, 33]
-        build-type: [debug]
     
     steps:
     - name: Checkout
@@ -112,7 +108,7 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: debug-apk-api-${{ matrix.api-level }}
+        name: debug-apk
         path: mymusicapp/build/outputs/apk/debug/*.apk
 
   security:
