@@ -5,7 +5,7 @@
 </div>
 
 [![Android CI](https://github.com/felnanuke2/vibra_app/workflows/Android%20CI/badge.svg)](https://github.com/felnanuke2/vibra_app/actions)
-[![codecov](https://codecov.io/gh/felnanuke2/vibra_app/branch/main/graph/badge.svg)](https://codecov.io/gh/felnanuke2/vibra_app)
+[![codecov](https://codecov.io/gh/felnanuke2/vibra_app/branch/master/graph/badge.svg)](https://codecov.io/gh/felnanuke2/vibra_app)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.7.0-purple.svg)](https://kotlinlang.org)
 [![Android](https://img.shields.io/badge/Android-API%2023+-green.svg)](https://android-arsenal.com/api?level=23)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-1.1.1-blue.svg)](https://developer.android.com/jetpack/compose)
